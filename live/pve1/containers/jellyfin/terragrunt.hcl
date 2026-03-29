@@ -2,55 +2,45 @@ include "root" {
   path = find_in_parent_folders("root.hcl")
 }
 
-terraform {
-  source = "${get_repo_root()}//modules/proxmox-lxc-service"
-}
-
 locals {
-  node_config  = read_terragrunt_config(find_in_parent_folders("config/node.hcl"))
-  secrets_file = "${get_terragrunt_dir()}/secrets.sops.yaml"
-  service_secrets = merge(
-    {
-      ssh_public_keys = []
-      user_password   = null
-    },
-    try(yamldecode(sops_decrypt_file(local.secrets_file)), {})
-  )
+  pve                 = read_terragrunt_config(find_in_parent_folders("pve.hcl"))
+  template_volid      = get_env("LXC_TEMPLATE", "local:vztmpl/nixos-proxmox-lxc.tar.xz")
+  template_url        = get_env("NIXOS_LXC_TEMPLATE_URL", "https://hydra.nixos.org/job/nixos/release-25.11/nixos.proxmoxLXC.x86_64-linux/latest/download-by-type/file/system-tarball")
+  ssh_agent_requested = lower(get_env("BOOTSTRAP_USE_SSH_AGENT", "true")) == "true"
+  ssh_agent_available = trimspace(get_env("SSH_AUTH_SOCK", "")) != ""
 }
 
-inputs = merge(
-  local.node_config.inputs,
-  {
-    lxc_defaults = merge(local.node_config.inputs.lxc_defaults, {
-      unprivileged           = true
-      rootfs_size_gb_default = 16
-      template_file_name     = "ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
-      template_url           = "http://download.proxmox.com/images/system/ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
-    })
+terraform {
+  source = "../../../../modules/lxc"
 
-    containers = {
-      jellyfin = {
-        ct_id            = 125
-        hostname         = "jellyfin"
-        static_ipv4_cidr = "192.168.68.25/24"
-        tags             = ["media", "jellyfin"]
-        ssh_public_keys  = try(local.service_secrets.ssh_public_keys, [])
-        user_password    = try(local.service_secrets.user_password, null)
-        bootstrap_commands = [
-          "set -eux",
-          "apt-get update",
-          "apt-get install -y --no-install-recommends ca-certificates curl",
-          "install -m 0755 -d /etc/apt/keyrings",
-          "curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key -o /etc/apt/keyrings/jellyfin.asc",
-          "chmod a+r /etc/apt/keyrings/jellyfin.asc",
-          "echo 'deb [signed-by=/etc/apt/keyrings/jellyfin.asc] https://repo.jellyfin.org/ubuntu noble main' > /etc/apt/sources.list.d/jellyfin.list",
-          "apt-get update",
-          "apt-get install -y --no-install-recommends libjemalloc2 jellyfin jellyfin-server jellyfin-ffmpeg7",
-          "ln -sf /usr/lib/jellyfin-ffmpeg/ffmpeg /usr/bin/ffmpeg",
-          "ln -sf /usr/lib/jellyfin-ffmpeg/ffprobe /usr/bin/ffprobe",
-          "systemctl enable --now jellyfin",
-        ]
-      }
-    }
+  before_hook "ensure_nixos_template" {
+    commands = ["plan", "apply"]
+    execute = [
+      "bash",
+      "${get_repo_root()}/scripts/ensure-nixos-template.sh",
+      local.pve.inputs.target_node,
+      local.template_volid,
+      local.template_url,
+    ]
   }
-)
+
+}
+
+inputs = merge(local.pve.inputs, {
+  vmid                    = 125
+  hostname                = "jellyfin"
+  ostemplate              = local.template_volid
+  ostype                  = "nixos"
+  lxc_password            = get_env("LXC_PASSWORD", "")
+  ssh_public_keys         = get_env("BOOTSTRAP_PUBLIC_KEY", "")
+  bootstrap_use_ssh_agent = local.ssh_agent_requested && local.ssh_agent_available
+  unprivileged            = true
+  features_nesting        = true
+  cores                   = 2
+  memory                  = 4096
+  swap                    = 512
+  rootfs_size             = "32G"
+  ipv4_cidr               = "192.168.68.25/24"
+  flake_file              = "${get_repo_root()}/nix/jellyfin/flake.nix"
+  flake_attr              = "jellyfin"
+})

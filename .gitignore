@@ -1,10 +1,6 @@
-.terraform/
 .terragrunt-cache/
+.tfstate/
 *.tfstate
 *.tfstate.*
-*.tfvars
-*.tfvars.json
-crash.log
-crash.*.log
+**/.terraform/
 .env
-*.sops.yaml
