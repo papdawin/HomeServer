@@ -8,9 +8,9 @@ include "lxc_common" {
 }
 
 inputs = merge(include.lxc_common.inputs, {
-  vmid       = 125
-  hostname   = "jellyfin"
-  ipv4_cidr  = "192.168.68.25/24"
-  flake_file = "${get_repo_root()}/nix/jellyfin/flake.nix"
-  flake_attr = "jellyfin"
+  vmid       = 126
+  hostname   = "qbittorrent"
+  ipv4_cidr  = "192.168.68.26/24"
+  flake_file = "${get_repo_root()}/nix/qbittorrent/flake.nix"
+  flake_attr = "qbittorrent"
 })

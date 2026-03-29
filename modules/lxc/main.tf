@@ -76,12 +76,12 @@ resource "null_resource" "flake_apply" {
   }
 
   connection {
-    type     = "ssh"
-    host     = split("/", trimspace(var.ipv4_cidr))[0]
-    user     = "root"
-    agent    = var.bootstrap_use_ssh_agent
+    type        = "ssh"
+    host        = split("/", trimspace(var.ipv4_cidr))[0]
+    user        = "root"
+    agent       = var.bootstrap_use_ssh_agent
     private_key = try(file(pathexpand("~/.ssh/id_ed25519")), try(file(pathexpand("~/.ssh/id_rsa")), null))
-    timeout  = "20m"
+    timeout     = "20m"
   }
 
   provisioner "remote-exec" {
