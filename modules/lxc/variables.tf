@@ -135,3 +135,34 @@ variable "bootstrap_use_ssh_agent" {
   type    = bool
   default = true
 }
+
+variable "common_sops_file" {
+  type = string
+}
+
+variable "bootstrap_private_key_file" {
+  type = string
+}
+
+variable "mount_points" {
+  description = "Additional LXC mount points (bind mounts or extra volumes)."
+  type = list(object({
+    path   = string
+    volume = string
+    size   = optional(string)
+  }))
+  default = []
+
+  validation {
+    condition = alltrue([
+      for mount_point in var.mount_points :
+      trimspace(mount_point.path) != "" &&
+      trimspace(mount_point.volume) != "" &&
+      (
+        try(mount_point.size, null) == null ||
+        trimspace(try(mount_point.size, "")) != ""
+      )
+    ])
+    error_message = "Each mount point must define non-empty path and volume values. If size is set, it must be non-empty."
+  }
+}

@@ -19,7 +19,30 @@
                 where = "/sys/kernel/debug";
               }
             ];
+            users.mutableUsers = false;
+            users.groups.media = {
+              gid = 2000;
+            };
+            users.users.papdawin = {
+              isNormalUser = true;
+              extraGroups = [
+                "wheel"
+                "qbittorrent"
+                "media"
+              ];
+              hashedPasswordFile = "/etc/nixos/secrets/papdawin-password-hash";
+            };
+            users.users.qbittorrent.extraGroups = [ "media" ];
+            systemd.tmpfiles.rules = [
+              "d /media 2775 root media -"
+              "d /media/movies 2775 root media -"
+              "d /media/shows 2775 root media -"
+              "d /media/series 2775 root media -"
+              "d /media/other 2775 root media -"
+              "d /media/music 2775 root media -"
+            ];
             services.qbittorrent.enable = true;
+            systemd.services.qbittorrent.serviceConfig.UMask = "0002";
             services.openssh = {
               enable = true;
               settings = {

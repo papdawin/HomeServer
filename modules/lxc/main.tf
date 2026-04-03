@@ -32,6 +32,19 @@ resource "proxmox_virtual_environment_container" "this" {
     size         = local.rootfs_size_gb
   }
 
+  dynamic "mount_point" {
+    for_each = var.mount_points
+
+    content {
+      path   = trimspace(mount_point.value.path)
+      volume = trimspace(mount_point.value.volume)
+      size = (
+        try(mount_point.value.size, null) == null ||
+        trimspace(try(mount_point.value.size, "")) == ""
+      ) ? null : trimspace(mount_point.value.size)
+    }
+  }
+
   network_interface {
     name     = "eth0"
     bridge   = var.bridge
@@ -69,10 +82,12 @@ resource "null_resource" "flake_apply" {
   count = var.flake_file != "" ? 1 : 0
 
   triggers = {
-    container_id = tostring(var.vmid)
-    flake_sha    = filesha256(var.flake_file)
-    flake_attr   = var.flake_attr
-    target_ip    = split("/", trimspace(var.ipv4_cidr))[0]
+    container_id      = tostring(var.vmid)
+    flake_sha         = filesha256(var.flake_file)
+    common_sops_sha   = filesha256(var.common_sops_file)
+    bootstrap_key_sha = filesha256(pathexpand(var.bootstrap_private_key_file))
+    flake_attr        = var.flake_attr
+    target_ip         = split("/", trimspace(var.ipv4_cidr))[0]
   }
 
   connection {
@@ -80,13 +95,14 @@ resource "null_resource" "flake_apply" {
     host        = split("/", trimspace(var.ipv4_cidr))[0]
     user        = "root"
     agent       = var.bootstrap_use_ssh_agent
-    private_key = try(file(pathexpand("~/.ssh/id_ed25519")), try(file(pathexpand("~/.ssh/id_rsa")), null))
+    private_key = try(file(pathexpand(var.bootstrap_private_key_file)), try(file(pathexpand("~/.ssh/id_rsa")), null))
     timeout     = "20m"
   }
 
   provisioner "remote-exec" {
     inline = [
       "mkdir -p /etc/nixos",
+      "mkdir -p /etc/nixos/secrets",
     ]
   }
 
@@ -95,11 +111,23 @@ resource "null_resource" "flake_apply" {
     destination = "/etc/nixos/flake.nix"
   }
 
+  provisioner "file" {
+    source      = var.common_sops_file
+    destination = "/etc/nixos/secrets/common.sops.yaml"
+  }
+
+  provisioner "file" {
+    source      = pathexpand(var.bootstrap_private_key_file)
+    destination = "/etc/nixos/secrets/bootstrap-ssh-private-key"
+  }
+
   provisioner "remote-exec" {
     inline = [
+      "chmod 700 /etc/nixos/secrets",
+      "chmod 600 /etc/nixos/secrets/bootstrap-ssh-private-key /etc/nixos/secrets/common.sops.yaml",
       "mkdir -p /etc/nix",
-      "grep -q 'experimental-features' /etc/nix/nix.conf || echo 'experimental-features = nix-command flakes' >> /etc/nix/nix.conf",
-      "nixos-rebuild switch --impure --flake /etc/nixos#${var.flake_attr}",
+      "bash -lc 'if [ -w /etc/nix ] && { [ ! -e /etc/nix/nix.conf ] || [ -w /etc/nix/nix.conf ]; }; then grep -q \"experimental-features\" /etc/nix/nix.conf 2>/dev/null || echo \"experimental-features = nix-command flakes\" >> /etc/nix/nix.conf; fi'",
+      "bash -lc 'set -euxo pipefail; nixos-rebuild switch --impure --flake /etc/nixos#${var.flake_attr} -L --show-trace 2>&1 | tee /tmp/nixos-rebuild-${var.flake_attr}.log'",
     ]
   }
 

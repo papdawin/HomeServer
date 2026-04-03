@@ -22,15 +22,17 @@ terraform {
 }
 
 inputs = merge(local.pve.inputs, {
-  ostemplate              = local.template_volid
-  ostype                  = "nixos"
-  lxc_password            = get_env("LXC_PASSWORD", "")
-  ssh_public_keys         = get_env("BOOTSTRAP_PUBLIC_KEY", "")
-  bootstrap_use_ssh_agent = local.ssh_agent_requested && local.ssh_agent_available
-  unprivileged            = true
-  features_nesting        = true
-  cores                   = 2
-  memory                  = 4096
-  swap                    = 512
-  rootfs_size             = "32G"
+  ostemplate                 = local.template_volid
+  ostype                     = "nixos"
+  lxc_password               = get_env("LXC_PASSWORD", "")
+  ssh_public_keys            = get_env("BOOTSTRAP_PUBLIC_KEY", "")
+  common_sops_file           = "${get_repo_root()}/live/pve1/containers/common.sops.yaml"
+  bootstrap_private_key_file = get_env("BOOTSTRAP_PRIVATE_KEY_FILE", "~/.ssh/id_ed25519")
+  bootstrap_use_ssh_agent    = local.ssh_agent_requested && local.ssh_agent_available
+  unprivileged               = true
+  features_nesting           = true
+  cores                      = 2
+  memory                     = 4096
+  swap                       = 512
+  rootfs_size                = "32G"
 })
