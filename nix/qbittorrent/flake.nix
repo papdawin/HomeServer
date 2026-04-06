@@ -40,6 +40,9 @@
               "d /media/series 2775 root media -"
               "d /media/other 2775 root media -"
               "d /media/music 2775 root media -"
+              "z /var/lib/qBittorrent 0750 qbittorrent qbittorrent -"
+              "z /var/lib/qBittorrent/qBittorrent 0750 qbittorrent qbittorrent -"
+              "z /var/lib/qBittorrent/qBittorrent/config 0750 qbittorrent qbittorrent -"
             ];
             services.qbittorrent.enable = true;
             systemd.services.qbittorrent.serviceConfig.UMask = "0002";

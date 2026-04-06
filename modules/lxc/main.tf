@@ -126,8 +126,10 @@ resource "null_resource" "flake_apply" {
       "chmod 700 /etc/nixos/secrets",
       "chmod 600 /etc/nixos/secrets/bootstrap-ssh-private-key /etc/nixos/secrets/common.sops.yaml",
       "mkdir -p /etc/nix",
-      "bash -lc 'if [ -w /etc/nix ] && { [ ! -e /etc/nix/nix.conf ] || [ -w /etc/nix/nix.conf ]; }; then grep -q \"experimental-features\" /etc/nix/nix.conf 2>/dev/null || echo \"experimental-features = nix-command flakes\" >> /etc/nix/nix.conf; fi'",
-      "bash -lc 'set -euxo pipefail; nixos-rebuild switch --impure --flake /etc/nixos#${var.flake_attr} -L --show-trace 2>&1 | tee /tmp/nixos-rebuild-${var.flake_attr}.log'",
+      "rm -f /etc/nixos/flake.lock",
+      "bash -lc 'if [ -w /etc/nix ] && { [ ! -e /etc/nix/nix.conf ] || [ -w /etc/nix/nix.conf ]; }; then grep -q \"experimental-features\" /etc/nix/nix.conf 2>/dev/null || echo \"experimental-features = nix-command flakes\" >> /etc/nix/nix.conf; grep -q \"cache\\.garnix\\.io\" /etc/nix/nix.conf 2>/dev/null || echo \"extra-substituters = https://cache.garnix.io\" >> /etc/nix/nix.conf; grep -q \"CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g\" /etc/nix/nix.conf 2>/dev/null || echo \"extra-trusted-public-keys = cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=\" >> /etc/nix/nix.conf; fi'",
+      "bash -lc 'set -euxo pipefail; mkdir -p /var/tmp/nix-build; chmod 1777 /var/tmp/nix-build || true; df -h / /nix/store || true; df -i / /nix/store || true; nix-collect-garbage -d || true; nix-store --optimise || true; rm -rf /var/tmp/nix-build/* /tmp/nix-build-* || true; df -h / /nix/store || true; df -i / /nix/store || true'",
+      "bash -lc 'set -euxo pipefail; nixos-rebuild switch --accept-flake-config --impure --flake /etc/nixos#${var.flake_attr} -L --show-trace 2>&1 | tee /tmp/nixos-rebuild-${var.flake_attr}.log'",
     ]
   }
 

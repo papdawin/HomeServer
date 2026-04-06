@@ -1,11 +1,17 @@
 {
   description = "OpenClaw NixOS container for Proxmox LXC";
+  nixConfig = {
+    extra-substituters = [ "https://cache.garnix.io" ];
+    extra-trusted-public-keys = [
+      "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+    ];
+  };
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     nix-openclaw = {
-      url = "github:openclaw/nix-openclaw";
-      inputs.nixpkgs.follows = "nixpkgs";
+      # Pin nix-openclaw to a known commit so rebuilds stay stable and cacheable.
+      url = "github:openclaw/nix-openclaw/64d410666821866c565e048a4d07d6cf5d8e494e";
     };
   };
 
@@ -17,9 +23,24 @@
           (import "/etc/nixos/configuration.nix"))
         ++ [
           nix-openclaw.nixosModules.openclaw-gateway
-          ({ ... }: {
+          ({ pkgs, ... }: {
             system.stateVersion = "25.11";
             boot.isContainer = true;
+            boot.tmp.useTmpfs = false;
+
+            nix.settings = {
+              build-dir = "/var/tmp/nix-build";
+              extra-substituters = [ "https://cache.garnix.io" ];
+              extra-trusted-public-keys = [
+                "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+              ];
+              auto-optimise-store = true;
+            };
+            nix.gc = {
+              automatic = true;
+              dates = "daily";
+              options = "--delete-older-than 3d";
+            };
 
             systemd.mounts = [
               {
@@ -27,11 +48,11 @@
                 where = "/sys/kernel/debug";
               }
             ];
-
-            nixpkgs.overlays = [ nix-openclaw.overlays.default ];
+            systemd.tmpfiles.rules = [ "d /var/tmp/nix-build 1777 root root - -" ];
 
             services.openclaw-gateway = {
               enable = true;
+              package = nix-openclaw.packages.${pkgs.system}.openclaw-gateway;
               config = {
                 gateway = {
                   mode = "local";

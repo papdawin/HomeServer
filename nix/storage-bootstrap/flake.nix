@@ -43,6 +43,8 @@
               "d /media/series 2775 root media -"
               "d /media/other 2775 root media -"
               "d /media/music 2775 root media -"
+              "d /appdata-jellyfin 2775 root media -"
+              "d /appdata-qbittorrent 2775 root media -"
             ];
 
             systemd.services."storage-bootstrap" = {
@@ -60,6 +62,8 @@
                 install -d -m 2775 -o root -g media /media/series
                 install -d -m 2775 -o root -g media /media/other
                 install -d -m 2775 -o root -g media /media/music
+                install -d -m 2775 -o root -g media /appdata-jellyfin
+                install -d -m 2775 -o root -g media /appdata-qbittorrent
               '';
             };
 

@@ -43,6 +43,10 @@
               "d /media/series 2775 root media -"
               "d /media/other 2775 root media -"
               "d /media/music 2775 root media -"
+              "z /var/lib/jellyfin 0750 jellyfin jellyfin -"
+              "z /var/lib/jellyfin/config 0750 jellyfin jellyfin -"
+              "z /var/lib/jellyfin/log 0750 jellyfin jellyfin -"
+              "z /var/cache/jellyfin 0750 jellyfin jellyfin -"
             ];
 
             services.jellyfin.enable = true;

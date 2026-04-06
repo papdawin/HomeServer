@@ -12,7 +12,8 @@ dependencies {
 }
 
 locals {
-  media_volume_id = "media:124/vm-124-disk-0.raw"
+  media_volume_id               = trimspace(get_env("MEDIA_VOLUME_ID", "media:124/vm-124-disk-0.raw"))
+  qbittorrent_appdata_volume_id = trimspace(get_env("QBITTORRENT_APPDATA_VOLUME_ID", "media:124/vm-124-disk-2.raw"))
 }
 
 inputs = merge(include.lxc_common.inputs, {
@@ -25,6 +26,10 @@ inputs = merge(include.lxc_common.inputs, {
     {
       path   = "/media"
       volume = local.media_volume_id
-    }
+    },
+    {
+      path   = "/var/lib/qBittorrent"
+      volume = local.qbittorrent_appdata_volume_id
+    },
   ]
 })
