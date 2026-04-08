@@ -20,8 +20,17 @@ inputs = merge(include.lxc_common.inputs, {
   vmid       = 125
   hostname   = "jellyfin"
   ipv4_cidr  = "192.168.68.25/24"
+  tags       = ["lxc", "nixos", "media", "streaming"]
   flake_file = "${get_repo_root()}/nix/jellyfin/flake.nix"
   flake_attr = "jellyfin"
+  post_rebuild_commands = [
+    <<-EOT
+      printf '%s' '${base64encode(file("${get_repo_root()}/scripts/jellyfin-bootstrap-user.sh"))}' | base64 -d >/tmp/jellyfin-bootstrap-user.sh
+      chmod 700 /tmp/jellyfin-bootstrap-user.sh
+      JELLYFIN_BOOTSTRAP_DEBUG=1 /tmp/jellyfin-bootstrap-user.sh
+      rm -f /tmp/jellyfin-bootstrap-user.sh
+    EOT
+  ]
   mount_points = [
     {
       path   = "/media"

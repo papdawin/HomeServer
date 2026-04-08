@@ -31,6 +31,7 @@ inputs = merge(include.lxc_common.inputs, {
   vmid       = 124
   hostname   = "storage-bootstrap"
   ipv4_cidr  = "192.168.68.24/24"
+  tags       = ["lxc", "nixos", "storage", "bootstrap"]
   start      = local.helper_start
   onboot     = false
   flake_file = "${get_repo_root()}/nix/storage-bootstrap/flake.nix"

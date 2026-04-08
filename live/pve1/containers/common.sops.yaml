@@ -3,7 +3,7 @@ users:
         passwordHash: ENC[AES256_GCM,data:ppfCDqLneZXIvhXMsHZQqEXtZyFkV+ght0bWxez0BCm6D//v3dCgtN1fpIHsCBBsEh14jf5DO+f1z6jLHd4ts0AHWpIh4xPm4wQhbc3+D7LUWJSAvp0n/Kf1/CVknPizvBR1WdWLphjynw==,iv:0/e3ZzfFPvqkTA6M9TA+ohxRUHEq0wROtuB1EN46pQk=,tag:tI+i4CBmDHukvdvPhGNgfw==,type:str]
 services:
     jellyfin:
-        password: ENC[AES256_GCM,data:bE5FyFDC4tKSCgkaVGtyPIrDfA==,iv:skL8sBHL9WlTghzNCz/1mSU8lHjj0asnfnZA0oaSOlY=,tag:WWKen/PTE/tYcq/2GnhQxA==,type:str]
+        password: ENC[AES256_GCM,data:i59fga5M1O4=,iv:5x0n7k5sGUArTOqESKsGFRAXWM3bS9+wmc9QTA5B5uM=,tag:yNCJb+eLKPMiMUJQU6RsFQ==,type:str]
 sops:
     age:
         - recipient: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN3/cdC4JkaYQQMt7spl+5p8f0JmW7+8BQ6ZI0zZXPMe papdawin@desktop
@@ -16,7 +16,7 @@ sops:
             pdoZAFeSB2OEGAMmAKE08WSSE1E6Vsn0+HhHGDnVkGkUSOHJdddRtKeDd2GlocS6
             /tEmNA==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-04-03T09:02:47Z"
-    mac: ENC[AES256_GCM,data:SN/U7kigl122kncFzQIisgylUC+FxfSgKcV67mhRpPw4Xwb+esa3GrBYrCH8KOmIdrL6XPsQB6YdawKeGurSElu3Kxn2XmiIFwwE7YxSYfxo5XI07GI8rwU8Xg2YHusKIhwasG8W/ybJkZvEpjgcLrAr1C436JiZeWneq/SC5Wc=,iv:m2/7USaJHjeur6onHJFSvBLPRVOrbD+KbaMENiPXXIc=,tag:0e6uUTBxjSoKH75CTNfaJA==,type:str]
+    lastmodified: "2026-04-08T18:05:31Z"
+    mac: ENC[AES256_GCM,data:mGnTQg+c7Bv/iPNDEHAkx1OdlFey1xbcE7UsuyMoeozgkLP+1Yr0xlxmHwRk20H9hWhgah9tv02Mc9QUKWOOlZmJlkX4pWaf6COWLsXv9ci6em1f6tkFYx3+undnCeIezudmSppy0OBTU7wjTHsfb8be+4Wl2R2RKoOWTHIHXqk=,iv:LRhcAs3nIYxN2j2r8oc77G8eKq5FKGLmC0xx3/9b9kQ=,tag:YQ8VIsdakzlYGybunSFIYQ==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.11.0

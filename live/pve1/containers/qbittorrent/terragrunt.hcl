@@ -20,6 +20,7 @@ inputs = merge(include.lxc_common.inputs, {
   vmid       = 126
   hostname   = "qbittorrent"
   ipv4_cidr  = "192.168.68.26/24"
+  tags       = ["lxc", "nixos", "media", "downloads"]
   flake_file = "${get_repo_root()}/nix/qbittorrent/flake.nix"
   flake_attr = "qbittorrent"
   mount_points = [

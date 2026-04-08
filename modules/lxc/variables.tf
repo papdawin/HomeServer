@@ -10,6 +10,24 @@ variable "hostname" {
   type = string
 }
 
+variable "tags" {
+  description = "Container tags shown in Proxmox UI."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition = (
+      length(var.tags) <= 4 &&
+      alltrue([
+        for tag in var.tags :
+        trimspace(tag) != "" &&
+        can(regex("^[a-z0-9][a-z0-9_-]*$", lower(trimspace(tag))))
+      ])
+    )
+    error_message = "tags must contain up to 4 lowercase alphanumeric tags (allowed: _ and -)."
+  }
+}
+
 variable "ostemplate" {
   type = string
 }
@@ -165,4 +183,10 @@ variable "mount_points" {
     ])
     error_message = "Each mount point must define non-empty path and volume values. If size is set, it must be non-empty."
   }
+}
+
+variable "post_rebuild_commands" {
+  description = "Optional commands executed on the container after nixos-rebuild switch."
+  type        = list(string)
+  default     = []
 }
