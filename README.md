@@ -36,6 +36,10 @@ terragrunt apply --working-dir live/pve1/containers/storage-bootstrap
 terragrunt apply --working-dir live/pve1/containers/immich
 terragrunt apply --working-dir live/pve1/containers/jellyfin
 terragrunt apply --working-dir live/pve1/containers/qbittorrent
+terragrunt apply --working-dir live/pve1/containers/radarr
+terragrunt apply --working-dir live/pve1/containers/sonarr
+terragrunt apply --working-dir live/pve1/containers/prowlarr
+terragrunt apply --working-dir live/pve1/containers/jellyseerr
 terragrunt apply --working-dir live/pve1/containers/openclaw
 ```
 
@@ -60,17 +64,17 @@ Optional/common:
 - `STORAGE_BOOTSTRAP_START` (default `true`; set `false` after bootstrap to keep helper stopped)
 
 Shared container secrets:
-- `live/pve1/containers/common.sops.yaml` holds encrypted values used by container flakes (including `services.jellyfin.password`).
+- `live/pve1/containers/common.sops.yaml` holds encrypted values used by container flakes (including `services.jellyfin.password`, `services.qbittorrent.password`, and `services.mediaautomation.*` integration credentials).
 
-## Shared Media HDD (qBittorrent + Jellyfin)
+## Shared Media HDD (Media Stack)
 
 This setup uses a Proxmox **volume mount** (not host-path bind mount):
 
 - Terraform creates a Proxmox directory storage on your HDD (`live/pve1/storage/media`)
-- `storage-bootstrap` creates `/media` as a volume on that storage and bootstraps the shared directory layout
-- qBittorrent and Jellyfin both mount that same existing helper-created volume at `/media`
-- Both containers enforce a shared `media` group (GID `2000`) and setgid directory permissions
-- Expected directories inside the mount: `/media/movies`, `/media/shows`, `/media/series`, `/media/other`, `/media/music`
+- `storage-bootstrap` creates `/media` as a volume on that storage and is the single place that bootstraps the shared directory layout
+- qBittorrent, Jellyfin, Radarr, Sonarr, Prowlarr, and Jellyseerr all mount that same existing helper-created volume at `/media`
+- Services enforce a shared `media` group (GID `2000`) and setgid directory permissions
+- Expected directories inside the mount: `/media/movies`, `/media/shows`, `/media/other`, `/media/music`, `/media/downloads/radarr`, `/media/downloads/sonarr`, `/media/downloads/other`, `/media/downloads/incomplete`, `/media/appdata/qbittorrent`, `/media/appdata/radarr`, `/media/appdata/sonarr`, `/media/appdata/prowlarr`, `/media/appdata/jellyseerr`
 
 Set storage values, then apply in dependency order:
 
@@ -83,6 +87,10 @@ terragrunt apply --working-dir live/pve1/storage/media
 terragrunt apply --working-dir live/pve1/containers/storage-bootstrap
 terragrunt apply --working-dir live/pve1/containers/qbittorrent
 terragrunt apply --working-dir live/pve1/containers/jellyfin
+terragrunt apply --working-dir live/pve1/containers/radarr
+terragrunt apply --working-dir live/pve1/containers/sonarr
+terragrunt apply --working-dir live/pve1/containers/prowlarr
+terragrunt apply --working-dir live/pve1/containers/jellyseerr
 ```
 
 Re-apply is idempotent:

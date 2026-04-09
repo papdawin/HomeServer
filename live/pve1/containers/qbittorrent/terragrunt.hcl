@@ -12,8 +12,7 @@ dependencies {
 }
 
 locals {
-  media_volume_id               = trimspace(get_env("MEDIA_VOLUME_ID", "media:124/vm-124-disk-0.raw"))
-  qbittorrent_appdata_volume_id = trimspace(get_env("QBITTORRENT_APPDATA_VOLUME_ID", "media:124/vm-124-disk-2.raw"))
+  media_volume_id = trimspace(get_env("MEDIA_VOLUME_ID", "media:124/vm-124-disk-0.raw"))
 }
 
 inputs = merge(include.lxc_common.inputs, {
@@ -23,14 +22,22 @@ inputs = merge(include.lxc_common.inputs, {
   tags       = ["lxc", "nixos", "media", "downloads"]
   flake_file = "${get_repo_root()}/nix/qbittorrent/flake.nix"
   flake_attr = "qbittorrent"
+  post_rebuild_commands = [
+    <<-EOT
+      printf '%s' '${base64encode(file("${get_repo_root()}/nix/qbittorrent/qbittorrent-bootstrap-user.sh"))}' | base64 -d >/tmp/qbittorrent-bootstrap-user.sh
+      chmod 700 /tmp/qbittorrent-bootstrap-user.sh
+      /tmp/qbittorrent-bootstrap-user.sh
+      rm -f /tmp/qbittorrent-bootstrap-user.sh
+      printf '%s' '${base64encode(file("${get_repo_root()}/nix/qbittorrent/qbittorrent-bootstrap-routing.sh"))}' | base64 -d >/tmp/qbittorrent-bootstrap-routing.sh
+      chmod 700 /tmp/qbittorrent-bootstrap-routing.sh
+      /tmp/qbittorrent-bootstrap-routing.sh
+      rm -f /tmp/qbittorrent-bootstrap-routing.sh
+    EOT
+  ]
   mount_points = [
     {
       path   = "/media"
       volume = local.media_volume_id
-    },
-    {
-      path   = "/var/lib/qBittorrent"
-      volume = local.qbittorrent_appdata_volume_id
     },
   ]
 })

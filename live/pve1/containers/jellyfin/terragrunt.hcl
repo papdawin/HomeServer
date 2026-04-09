@@ -25,10 +25,14 @@ inputs = merge(include.lxc_common.inputs, {
   flake_attr = "jellyfin"
   post_rebuild_commands = [
     <<-EOT
-      printf '%s' '${base64encode(file("${get_repo_root()}/scripts/jellyfin-bootstrap-user.sh"))}' | base64 -d >/tmp/jellyfin-bootstrap-user.sh
+      printf '%s' '${base64encode(file("${get_repo_root()}/nix/jellyfin/jellyfin-bootstrap-user.sh"))}' | base64 -d >/tmp/jellyfin-bootstrap-user.sh
       chmod 700 /tmp/jellyfin-bootstrap-user.sh
-      JELLYFIN_BOOTSTRAP_DEBUG=1 /tmp/jellyfin-bootstrap-user.sh
+      /tmp/jellyfin-bootstrap-user.sh
       rm -f /tmp/jellyfin-bootstrap-user.sh
+      printf '%s' '${base64encode(file("${get_repo_root()}/nix/jellyfin/jellyfin-bootstrap-libraries.sh"))}' | base64 -d >/tmp/jellyfin-bootstrap-libraries.sh
+      chmod 700 /tmp/jellyfin-bootstrap-libraries.sh
+      /tmp/jellyfin-bootstrap-libraries.sh
+      rm -f /tmp/jellyfin-bootstrap-libraries.sh
     EOT
   ]
   mount_points = [

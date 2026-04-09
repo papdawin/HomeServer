@@ -10,7 +10,10 @@
         (nixpkgs.lib.optional (builtins.pathExists "/etc/nixos/configuration.nix")
           (import "/etc/nixos/configuration.nix"))
         ++ [
-          ({ ... }: {
+          ({ pkgs, ... }:
+            let
+              qbittorrentBootstrapUsername = "papdawin";
+            in {
             system.stateVersion = "25.11";
             boot.isContainer = true;
             systemd.mounts = [
@@ -33,19 +36,34 @@
               hashedPasswordFile = "/etc/nixos/secrets/papdawin-password-hash";
             };
             users.users.qbittorrent.extraGroups = [ "media" ];
-            systemd.tmpfiles.rules = [
-              "d /media 2775 root media -"
-              "d /media/movies 2775 root media -"
-              "d /media/shows 2775 root media -"
-              "d /media/series 2775 root media -"
-              "d /media/other 2775 root media -"
-              "d /media/music 2775 root media -"
-              "z /var/lib/qBittorrent 0750 qbittorrent qbittorrent -"
-              "z /var/lib/qBittorrent/qBittorrent 0750 qbittorrent qbittorrent -"
-              "z /var/lib/qBittorrent/qBittorrent/config 0750 qbittorrent qbittorrent -"
-            ];
             services.qbittorrent.enable = true;
+            services.qbittorrent.profileDir = "/media/appdata/qbittorrent";
             systemd.services.qbittorrent.serviceConfig.UMask = "0002";
+            environment.systemPackages = with pkgs; [ curl ];
+
+            systemd.services.qbittorrent-credentials = {
+              description = "Prepare qBittorrent bootstrap credentials from shared SOPS secret";
+              wantedBy = [ "multi-user.target" ];
+              path = with pkgs; [
+                coreutils
+                sops
+              ];
+              serviceConfig = {
+                Type = "oneshot";
+              };
+              script = ''
+                set -eu
+                umask 077
+
+                password="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["qbittorrent"]["password"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
+
+                cat > /run/qbittorrent-bootstrap.env <<EOF
+                QBITTORRENT_BOOTSTRAP_USERNAME=${qbittorrentBootstrapUsername}
+                QBITTORRENT_BOOTSTRAP_PASSWORD=$password
+                EOF
+              '';
+            };
+
             services.openssh = {
               enable = true;
               settings = {

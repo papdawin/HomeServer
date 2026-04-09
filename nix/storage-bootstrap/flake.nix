@@ -35,17 +35,22 @@
               isSystemUser = true;
               group = "media";
             };
-
-            systemd.tmpfiles.rules = [
-              "d /media 2775 root media -"
-              "d /media/movies 2775 root media -"
-              "d /media/shows 2775 root media -"
-              "d /media/series 2775 root media -"
-              "d /media/other 2775 root media -"
-              "d /media/music 2775 root media -"
-              "d /appdata-jellyfin 2775 root media -"
-              "d /appdata-qbittorrent 2775 root media -"
-            ];
+            users.users.radarr = {
+              isSystemUser = true;
+              group = "media";
+            };
+            users.users.sonarr = {
+              isSystemUser = true;
+              group = "media";
+            };
+            users.users.prowlarr = {
+              isSystemUser = true;
+              group = "media";
+            };
+            users.users.jellyseerr = {
+              isSystemUser = true;
+              group = "media";
+            };
 
             systemd.services."storage-bootstrap" = {
               description = "Bootstrap shared storage directory layout and ownership";
@@ -59,11 +64,20 @@
                 install -d -m 2775 -o root -g media /media
                 install -d -m 2775 -o root -g media /media/movies
                 install -d -m 2775 -o root -g media /media/shows
-                install -d -m 2775 -o root -g media /media/series
                 install -d -m 2775 -o root -g media /media/other
                 install -d -m 2775 -o root -g media /media/music
+                install -d -m 2775 -o root -g media /media/downloads
+                install -d -m 2775 -o root -g media /media/downloads/radarr
+                install -d -m 2775 -o root -g media /media/downloads/sonarr
+                install -d -m 2775 -o root -g media /media/downloads/other
+                install -d -m 2775 -o root -g media /media/downloads/incomplete
+                install -d -m 2775 -o root -g media /media/appdata
+                install -d -m 2775 -o root -g media /media/appdata/qbittorrent
+                install -d -m 2775 -o root -g media /media/appdata/radarr
+                install -d -m 2775 -o root -g media /media/appdata/sonarr
+                install -d -m 2775 -o root -g media /media/appdata/prowlarr
+                install -d -m 2775 -o root -g media /media/appdata/jellyseerr
                 install -d -m 2775 -o root -g media /appdata-jellyfin
-                install -d -m 2775 -o root -g media /appdata-qbittorrent
               '';
             };
 

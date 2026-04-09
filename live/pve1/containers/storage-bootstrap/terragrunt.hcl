@@ -21,10 +21,8 @@ dependency "media_storage" {
 }
 
 locals {
-  media_volume_size               = trimspace(get_env("MEDIA_VOLUME_SIZE", "2T"))
-  jellyfin_appdata_volume_size    = trimspace(get_env("JELLYFIN_APPDATA_VOLUME_SIZE", "20G"))
-  qbittorrent_appdata_volume_size = trimspace(get_env("QBITTORRENT_APPDATA_VOLUME_SIZE", "10G"))
-  helper_start                    = lower(trimspace(get_env("STORAGE_BOOTSTRAP_START", "true"))) == "true"
+  media_volume_size = trimspace(get_env("MEDIA_VOLUME_SIZE", "2T"))
+  helper_start      = lower(trimspace(get_env("STORAGE_BOOTSTRAP_START", "true"))) == "true"
 }
 
 inputs = merge(include.lxc_common.inputs, {
@@ -45,12 +43,7 @@ inputs = merge(include.lxc_common.inputs, {
     {
       path   = "/appdata-jellyfin"
       volume = dependency.media_storage.outputs.storage_id
-      size   = local.jellyfin_appdata_volume_size
-    },
-    {
-      path   = "/appdata-qbittorrent"
-      volume = dependency.media_storage.outputs.storage_id
-      size   = local.qbittorrent_appdata_volume_size
+      size   = "20G"
     }
   ]
 })
