@@ -12,8 +12,7 @@ dependencies {
 }
 
 locals {
-  media_volume_id            = trimspace(get_env("MEDIA_VOLUME_ID", "media:124/vm-124-disk-0.raw"))
-  jellyfin_appdata_volume_id = trimspace(get_env("JELLYFIN_APPDATA_VOLUME_ID", "media:124/vm-124-disk-1.raw"))
+  media_volume_id = trimspace(get_env("MEDIA_VOLUME_ID", "media:124/vm-124-disk-0.raw"))
 }
 
 inputs = merge(include.lxc_common.inputs, {
@@ -25,24 +24,16 @@ inputs = merge(include.lxc_common.inputs, {
   flake_attr = "jellyfin"
   post_rebuild_commands = [
     <<-EOT
-      printf '%s' '${base64encode(file("${get_repo_root()}/nix/jellyfin/jellyfin-bootstrap-user.sh"))}' | base64 -d >/tmp/jellyfin-bootstrap-user.sh
-      chmod 700 /tmp/jellyfin-bootstrap-user.sh
-      /tmp/jellyfin-bootstrap-user.sh
-      rm -f /tmp/jellyfin-bootstrap-user.sh
-      printf '%s' '${base64encode(file("${get_repo_root()}/nix/jellyfin/jellyfin-bootstrap-libraries.sh"))}' | base64 -d >/tmp/jellyfin-bootstrap-libraries.sh
-      chmod 700 /tmp/jellyfin-bootstrap-libraries.sh
-      /tmp/jellyfin-bootstrap-libraries.sh
-      rm -f /tmp/jellyfin-bootstrap-libraries.sh
+      systemctl restart jellyfin-credentials.service
+      systemctl restart jellyfin-bootstrap.service
+      systemctl --no-pager --full status jellyfin-credentials.service jellyfin-bootstrap.service || true
+      journalctl -u jellyfin-credentials.service -u jellyfin-bootstrap.service -n 200 --no-pager || true
     EOT
   ]
   mount_points = [
     {
       path   = "/media"
       volume = local.media_volume_id
-    },
-    {
-      path   = "/var/lib/jellyfin"
-      volume = local.jellyfin_appdata_volume_id
     },
   ]
 })

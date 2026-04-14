@@ -61,7 +61,7 @@ Optional/common:
 - `MEDIA_STORAGE_ID` (default `media`)
 - `MEDIA_STORAGE_PATH` (default `/mnt/pve/HDD/media`)
 - `MEDIA_VOLUME_SIZE` (default `2T`)
-- `STORAGE_BOOTSTRAP_START` (default `true`; set `false` after bootstrap to keep helper stopped)
+- `STORAGE_BOOTSTRAP_START` (default `true`; helper auto-shuts down after bootstrap, set `false` to skip starting it on later applies)
 
 Shared container secrets:
 - `live/pve1/containers/common.sops.yaml` holds encrypted values used by container flakes (including `services.jellyfin.password`, `services.qbittorrent.password`, and `services.mediaautomation.*` integration credentials).
@@ -72,6 +72,7 @@ This setup uses a Proxmox **volume mount** (not host-path bind mount):
 
 - Terraform creates a Proxmox directory storage on your HDD (`live/pve1/storage/media`)
 - `storage-bootstrap` creates `/media` as a volume on that storage and is the single place that bootstraps the shared directory layout
+- LXC mount wiring stays in Terraform/Terragrunt; `storage-bootstrap` validates the mounts and initializes directory structure/ownership inside them
 - qBittorrent, Jellyfin, Radarr, Sonarr, Prowlarr, and Jellyseerr all mount that same existing helper-created volume at `/media`
 - Services enforce a shared `media` group (GID `2000`) and setgid directory permissions
 - Expected directories inside the mount: `/media/movies`, `/media/shows`, `/media/other`, `/media/music`, `/media/downloads/radarr`, `/media/downloads/sonarr`, `/media/downloads/other`, `/media/downloads/incomplete`, `/media/appdata/qbittorrent`, `/media/appdata/radarr`, `/media/appdata/sonarr`, `/media/appdata/prowlarr`, `/media/appdata/jellyseerr`

@@ -7,7 +7,10 @@
     nixosConfigurations.storagebootstrap = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
-        ({ ... }: {
+        ({ pkgs, ... }:
+          let
+            doneFile = "/var/lib/storage-bootstrap/bootstrap.done";
+          in {
             system.stateVersion = "25.11";
             boot.isContainer = true;
 
@@ -55,11 +58,23 @@
             systemd.services."storage-bootstrap" = {
               description = "Bootstrap shared storage directory layout and ownership";
               wantedBy = [ "multi-user.target" ];
+              path = with pkgs; [ util-linux ];
+              unitConfig.ConditionPathExists = "!${doneFile}";
               serviceConfig = {
                 Type = "oneshot";
               };
               script = ''
                 set -eu
+
+                mountpoint -q /media || {
+                  echo "Expected /media to be a mounted Proxmox volume" >&2
+                  exit 1
+                }
+
+                mountpoint -q /appdata-jellyfin || {
+                  echo "Expected /appdata-jellyfin to be a mounted Proxmox volume" >&2
+                  exit 1
+                }
 
                 install -d -m 2775 -o root -g media /media
                 install -d -m 2775 -o root -g media /media/movies
@@ -78,6 +93,26 @@
                 install -d -m 2775 -o root -g media /media/appdata/prowlarr
                 install -d -m 2775 -o root -g media /media/appdata/jellyseerr
                 install -d -m 2775 -o root -g media /appdata-jellyfin
+
+                install -d -m 0755 -o root -g root "$(dirname "${doneFile}")"
+                touch "${doneFile}"
+              '';
+            };
+
+            systemd.services."storage-bootstrap-shutdown" = {
+              description = "Power off helper container after bootstrap";
+              wantedBy = [ "multi-user.target" ];
+              after = [ "storage-bootstrap.service" ];
+              serviceConfig = {
+                Type = "oneshot";
+              };
+              script = ''
+                set -eu
+
+                [ -f "${doneFile}" ] || exit 0
+
+                # Delay shutdown so Terraform's SSH provisioner can exit cleanly.
+                ${pkgs.systemd}/bin/shutdown -P +1 "storage bootstrap completed"
               '';
             };
 

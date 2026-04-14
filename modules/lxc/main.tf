@@ -9,6 +9,13 @@ locals {
     for tag in var.tags : lower(trimspace(tag))
     if trimspace(tag) != ""
   ]))
+
+  flake_dir   = var.flake_file != "" ? dirname(var.flake_file) : null
+  flake_files = var.flake_file != "" ? sort(tolist(fileset(dirname(var.flake_file), "**"))) : []
+  flake_tree_sha = sha256(join("", [
+    for file in local.flake_files :
+    "${file}:${filesha256("${local.flake_dir}/${file}")};"
+  ]))
 }
 
 resource "proxmox_virtual_environment_container" "this" {
@@ -88,7 +95,7 @@ resource "null_resource" "flake_apply" {
 
   triggers = {
     container_id      = tostring(var.vmid)
-    flake_sha         = filesha256(var.flake_file)
+    flake_sha         = local.flake_tree_sha
     common_sops_sha   = filesha256(var.common_sops_file)
     bootstrap_key_sha = filesha256(pathexpand(var.bootstrap_private_key_file))
     post_rebuild_sha  = sha256(join("\n", var.post_rebuild_commands))
@@ -113,8 +120,8 @@ resource "null_resource" "flake_apply" {
   }
 
   provisioner "file" {
-    source      = var.flake_file
-    destination = "/etc/nixos/flake.nix"
+    source      = "${local.flake_dir}/"
+    destination = "/etc/nixos/"
   }
 
   provisioner "file" {

@@ -13,6 +13,7 @@
           ({ pkgs, ... }:
             let
               jellyfinBootstrapUsername = "papdawin";
+              jellyfinBootstrapScript = builtins.readFile ./jellyfin-bootstrap-user.sh;
             in {
             system.stateVersion = "25.11";
             boot.isContainer = true;
@@ -39,6 +40,19 @@
             };
             users.users.jellyfin.extraGroups = [ "media" ];
 
+            systemd.tmpfiles.rules = [
+              "d /media 2775 root media -"
+              "d /media/movies 2775 root media -"
+              "d /media/shows 2775 root media -"
+              "d /media/series 2775 root media -"
+              "d /media/other 2775 root media -"
+              "d /media/music 2775 root media -"
+              "z /var/lib/jellyfin 0750 jellyfin jellyfin -"
+              "z /var/lib/jellyfin/config 0750 jellyfin jellyfin -"
+              "z /var/lib/jellyfin/log 0750 jellyfin jellyfin -"
+              "z /var/cache/jellyfin 0750 jellyfin jellyfin -"
+            ];
+
             services.jellyfin.enable = true;
             environment.systemPackages = with pkgs; [ curl ];
 
@@ -63,6 +77,28 @@
                 JELLYFIN_BOOTSTRAP_PASSWORD=$password
                 EOF
               '';
+            };
+
+            systemd.services.jellyfin-bootstrap = {
+              description = "Bootstrap Jellyfin startup user";
+              wantedBy = [ "multi-user.target" ];
+              wants = [ "network-online.target" "jellyfin.service" "jellyfin-credentials.service" ];
+              after = [ "network-online.target" "jellyfin.service" "jellyfin-credentials.service" ];
+              path = with pkgs; [
+                bash
+                coreutils
+                curl
+                gawk
+                gnugrep
+                gnused
+                systemd
+              ];
+              serviceConfig = {
+                Type = "oneshot";
+                Restart = "on-failure";
+                RestartSec = "15s";
+              };
+              script = jellyfinBootstrapScript;
             };
 
             services.openssh = {
