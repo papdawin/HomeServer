@@ -11,8 +11,24 @@ dependencies {
   paths = ["../storage-bootstrap"]
 }
 
+dependency "storage_bootstrap" {
+  config_path = "../storage-bootstrap"
+
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "apply"]
+  mock_outputs = {
+    mount_points = [
+      {
+        path              = "/media"
+        path_in_datastore = "${trimspace(get_env("MEDIA_STORAGE_ID", "media"))}:124/vm-124-disk-0.raw"
+        volume            = "${trimspace(get_env("MEDIA_STORAGE_ID", "media"))}:124/vm-124-disk-0.raw"
+      }
+    ]
+  }
+}
+
 locals {
-  media_volume_id = trimspace(get_env("MEDIA_VOLUME_ID", "media:124/vm-124-disk-0.raw"))
+  media_storage_id      = trimspace(get_env("MEDIA_STORAGE_ID", "media"))
+  media_volume_fallback = "${local.media_storage_id}:124/vm-124-disk-0.raw"
 }
 
 inputs = merge(include.lxc_common.inputs, {
@@ -32,8 +48,11 @@ inputs = merge(include.lxc_common.inputs, {
   ]
   mount_points = [
     {
-      path   = "/media"
-      volume = local.media_volume_id
+      path = "/media"
+      volume = try(
+        [for mount_point in dependency.storage_bootstrap.outputs.mount_points : try(mount_point.path_in_datastore, mount_point.volume) if mount_point.path == "/media"][0],
+        local.media_volume_fallback
+      )
     },
   ]
 })

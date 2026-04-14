@@ -7,20 +7,38 @@ include "lxc_common" {
   expose = true
 }
 
-dependencies {
-  paths = ["../../storage/media"]
-}
+terraform {
+  source = "${get_repo_root()}/modules/lxc"
 
-dependency "media_storage" {
-  config_path = "../../storage/media"
+  before_hook "ensure_nixos_template" {
+    commands = ["plan", "apply"]
+    execute = [
+      "bash",
+      "${get_repo_root()}/scripts/ensure-nixos-template.sh",
+      include.lxc_common.locals.pve.inputs.target_node,
+      include.lxc_common.locals.template_volid,
+      include.lxc_common.locals.template_url,
+    ]
+  }
 
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
-  mock_outputs = {
-    storage_id = "media"
+  # `terragrunt run --all --working-dir live/pve1/containers` does not include
+  # units outside that folder by default. Ensure the external media storage
+  # unit is applied first so storage-bootstrap can safely consume its outputs.
+  before_hook "ensure_media_storage" {
+    commands = ["apply"]
+    execute = [
+      "terragrunt",
+      "apply",
+      "-auto-approve",
+      "--non-interactive",
+      "--working-dir",
+      "${get_repo_root()}/live/pve1/storage/media",
+    ]
   }
 }
 
 locals {
+  media_storage_id  = trimspace(get_env("MEDIA_STORAGE_ID", "media"))
   media_volume_size = trimspace(get_env("MEDIA_VOLUME_SIZE", "2T"))
   helper_start      = lower(trimspace(get_env("STORAGE_BOOTSTRAP_START", "true"))) == "true"
 }
@@ -37,12 +55,12 @@ inputs = merge(include.lxc_common.inputs, {
   mount_points = [
     {
       path   = "/media"
-      volume = dependency.media_storage.outputs.storage_id
+      volume = local.media_storage_id
       size   = local.media_volume_size
     },
     {
       path   = "/appdata-jellyfin"
-      volume = dependency.media_storage.outputs.storage_id
+      volume = local.media_storage_id
       size   = "20G"
     }
   ]

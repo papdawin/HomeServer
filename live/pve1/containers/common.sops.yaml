@@ -15,6 +15,8 @@ services:
             password: ENC[AES256_GCM,data:jRn5mWAfQOk=,iv:oaEZbh27sLHMp403+jrWLbNfz/rsISeklQmAJaRvuMw=,tag:iWqlHJSFo82IDrlBWphK3Q==,type:str]
         jellyseerr:
             apiKey: ENC[AES256_GCM,data:ApVOFBYQpdD2Kvh4gAIVR+8KYTtH+l99COrQ/BlRLjyUktNZkpfDOW0ERSpx2Mw+,iv:Bbbdg6xbZC8kGCkHP3+swAZnUpabn5QxprC+AHTjkKo=,tag:dJHztAoOs0B2E9V0gG3WqA==,type:str]
+    prowlarr:
+        password: ENC[AES256_GCM,data:TuNiDBKyq48=,iv:hW2cY3LW7995flex0fHda8nxSSS+CDKiW1zj2JKAktk=,tag:W6MHTZL3XnF5Z+Kk+CQsqw==,type:str]
 sops:
     age:
         - recipient: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN3/cdC4JkaYQQMt7spl+5p8f0JmW7+8BQ6ZI0zZXPMe papdawin@desktop
@@ -27,7 +29,7 @@ sops:
             pdoZAFeSB2OEGAMmAKE08WSSE1E6Vsn0+HhHGDnVkGkUSOHJdddRtKeDd2GlocS6
             /tEmNA==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-04-09T16:08:59Z"
-    mac: ENC[AES256_GCM,data:6vPQ3zJxofV8TRTJgiUF6XgjMH0v8jFCT7LH0234sm/CU3BfQjUU8pIi443mzNNTQVU2epxP6PhmB9UxXwr2nOXHE9IfiGeN8tNs5lEQWXmkYlqB3+Rsr6YF8kXlCPoMVTGS9WLOK4/9XSMgAvuuvadK9B+EplPoeygrSv1igJY=,iv:esKq7rtNF9Lsr9rEX4lA5QhUiP2refNqTBBVpdfn99I=,tag:kPjR/2Krld7vN/BitlpPIw==,type:str]
+    lastmodified: "2026-04-14T18:58:56Z"
+    mac: ENC[AES256_GCM,data:LgbRAuRHC1anETwqZfevjdpMwhH0EDKfghC7iPl4Azy/FjlGCT4budxIvpzZUU1yCkm5Zi6Afxo1G38KFB7/JMGj/Pm11U5SkPe1A15RQLjqPEXeMsKA8M/dtMOkKDmMZSz1njYNGeE+9+67OTeVjF+zbx+871r9EwAPxffXNKo=,iv:eomqP3bMPUjoWzSiEVQKxpptsC7XNFKVJVUjhxFufBY=,tag:L6i/Wk//mRxP/S3a4pyaNA==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.11.0

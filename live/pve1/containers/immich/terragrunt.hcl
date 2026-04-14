@@ -7,6 +7,10 @@ include "lxc_common" {
   expose = true
 }
 
+dependencies {
+  paths = ["../storage-bootstrap"]
+}
+
 inputs = merge(include.lxc_common.inputs, {
   vmid       = 128
   hostname   = "immich"

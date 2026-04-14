@@ -10,7 +10,11 @@
         (nixpkgs.lib.optional (builtins.pathExists "/etc/nixos/configuration.nix")
           (import "/etc/nixos/configuration.nix"))
         ++ [
-          ({ lib, pkgs, ... }: {
+          ({ lib, pkgs, ... }:
+            let
+              prowlarrBootstrapUsername = "papdawin";
+              prowlarrBootstrapUserScript = builtins.readFile ./prowlarr-bootstrap-user.sh;
+            in {
             system.stateVersion = "25.11";
             boot.isContainer = true;
 
@@ -58,6 +62,48 @@
             systemd.services.prowlarr.environment.HOME = lib.mkForce "/media/appdata/prowlarr";
 
             environment.systemPackages = with pkgs; [ curl jq ];
+
+            systemd.services.prowlarr-credentials = {
+              description = "Prepare Prowlarr bootstrap credentials from shared SOPS secret";
+              wantedBy = [ "multi-user.target" ];
+              path = with pkgs; [
+                coreutils
+                sops
+              ];
+              serviceConfig = {
+                Type = "oneshot";
+              };
+              script = ''
+                set -eu
+                umask 077
+
+                password="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["prowlarr"]["password"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
+
+                cat > /run/prowlarr-bootstrap.env <<EOF
+                PROWLARR_BOOTSTRAP_USERNAME=${prowlarrBootstrapUsername}
+                PROWLARR_BOOTSTRAP_PASSWORD=$password
+                EOF
+              '';
+            };
+
+            systemd.services.prowlarr-bootstrap-user = {
+              description = "Bootstrap Prowlarr startup user";
+              wantedBy = [ "multi-user.target" ];
+              wants = [ "network-online.target" "prowlarr.service" "prowlarr-credentials.service" ];
+              after = [ "network-online.target" "prowlarr.service" "prowlarr-credentials.service" ];
+              path = with pkgs; [
+                bash
+                coreutils
+                curl
+                jq
+                gnused
+                systemd
+              ];
+              serviceConfig = {
+                Type = "oneshot";
+              };
+              script = prowlarrBootstrapUserScript;
+            };
 
             services.openssh = {
               enable = true;

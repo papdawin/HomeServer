@@ -15,3 +15,10 @@ output "mount_points" {
     }
   ]
 }
+
+output "media_volume_id" {
+  value = try(
+    [for mount_point in proxmox_virtual_environment_container.this.mount_point : try(mount_point.path_in_datastore, mount_point.volume) if mount_point.path == "/media"][0],
+    null
+  )
+}
