@@ -14,6 +14,11 @@
             let
               prowlarrBootstrapUsername = "papdawin";
               prowlarrBootstrapUserScript = builtins.readFile ./prowlarr-bootstrap-user.sh;
+              prowlarrUrl = "http://192.168.68.31:9696";
+              radarrHost = "192.168.68.29";
+              radarrPort = 7878;
+              sonarrHost = "192.168.68.30";
+              sonarrPort = 8989;
             in {
             system.stateVersion = "25.11";
             boot.isContainer = true;
@@ -96,6 +101,11 @@
                 PROWLARR_BOOTSTRAP_PASSWORD=$password
                 PROWLARR_NCORE_USERNAME=$ncore_username
                 PROWLARR_NCORE_PASSWORD=$ncore_password
+                PROWLARR_URL=${prowlarrUrl}
+                PROWLARR_RADARR_HOST=${radarrHost}
+                PROWLARR_RADARR_PORT=${toString radarrPort}
+                PROWLARR_SONARR_HOST=${sonarrHost}
+                PROWLARR_SONARR_PORT=${toString sonarrPort}
                 EOF
               '';
             };
