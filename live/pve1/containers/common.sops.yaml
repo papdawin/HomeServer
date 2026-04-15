@@ -17,6 +17,10 @@ services:
             apiKey: ENC[AES256_GCM,data:ApVOFBYQpdD2Kvh4gAIVR+8KYTtH+l99COrQ/BlRLjyUktNZkpfDOW0ERSpx2Mw+,iv:Bbbdg6xbZC8kGCkHP3+swAZnUpabn5QxprC+AHTjkKo=,tag:dJHztAoOs0B2E9V0gG3WqA==,type:str]
     prowlarr:
         password: ENC[AES256_GCM,data:TuNiDBKyq48=,iv:hW2cY3LW7995flex0fHda8nxSSS+CDKiW1zj2JKAktk=,tag:W6MHTZL3XnF5Z+Kk+CQsqw==,type:str]
+    sonarr:
+        password: ENC[AES256_GCM,data:halG11fiqAw=,iv:DN6DjVBec97k2rLokB3Y924A+1XlhqFX4FAdFKKfmVc=,tag:3Io+MtiZ3nAqc8Ok9sQA8Q==,type:str]
+    radarr:
+        password: ENC[AES256_GCM,data:V1R+X2M4ddo=,iv:H6GgLyatDU7y6ivc5fgFwiOD8wnzVK/2TO7CnPsYaT8=,tag:zVyDR7GLkbu9RymtnkJ9cQ==,type:str]
 sops:
     age:
         - recipient: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN3/cdC4JkaYQQMt7spl+5p8f0JmW7+8BQ6ZI0zZXPMe papdawin@desktop
@@ -29,7 +33,7 @@ sops:
             pdoZAFeSB2OEGAMmAKE08WSSE1E6Vsn0+HhHGDnVkGkUSOHJdddRtKeDd2GlocS6
             /tEmNA==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-04-14T18:58:56Z"
-    mac: ENC[AES256_GCM,data:LgbRAuRHC1anETwqZfevjdpMwhH0EDKfghC7iPl4Azy/FjlGCT4budxIvpzZUU1yCkm5Zi6Afxo1G38KFB7/JMGj/Pm11U5SkPe1A15RQLjqPEXeMsKA8M/dtMOkKDmMZSz1njYNGeE+9+67OTeVjF+zbx+871r9EwAPxffXNKo=,iv:eomqP3bMPUjoWzSiEVQKxpptsC7XNFKVJVUjhxFufBY=,tag:L6i/Wk//mRxP/S3a4pyaNA==,type:str]
+    lastmodified: "2026-04-15T04:46:29Z"
+    mac: ENC[AES256_GCM,data:GtMNvUzidZ9+qQyh+bdt5vbNjSbRv2fvpf+4WW0uYPdB9YTT4ry1zjZPC79FUgYM00yAyuxEfA07o5g86q/QFPk39VqnSf6K8+GzFZ+9CSv8R8EWh+ir9d3OzcctNDxHjWFOnFAgKSJEGrr9zQzEtwXXNd6nxHXu70RTRJV1kwQ=,iv:wiiF3RJ6VSSSuPRHUWThV5gHyXSx10Q1khYB8ePJvhY=,tag:4uARNUVXuJ3uwFuQm9RTBw==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.11.0

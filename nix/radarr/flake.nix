@@ -12,6 +12,8 @@
         ++ [
           ({ pkgs, ... }:
             let
+              radarrBootstrapUsername = "papdawin";
+              radarrBootstrapUserScript = builtins.readFile ./radarr-bootstrap-user.sh;
               qbittorrentHost = "192.168.68.26";
               qbittorrentPort = 8080;
             in {
@@ -68,14 +70,36 @@
 
                   qbt_username="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["mediaautomation"]["qbittorrent"]["username"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
                   qbt_password="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["mediaautomation"]["qbittorrent"]["password"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
+                  password="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["radarr"]["password"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
 
                   cat > /run/radarr-bootstrap.env <<EOF_INNER
                   RADARR_QBITTORRENT_HOST=${qbittorrentHost}
                   RADARR_QBITTORRENT_PORT=${toString qbittorrentPort}
                   RADARR_QBITTORRENT_USERNAME=$qbt_username
                   RADARR_QBITTORRENT_PASSWORD=$qbt_password
+                  RADARR_BOOTSTRAP_USERNAME=${radarrBootstrapUsername}
+                  RADARR_BOOTSTRAP_PASSWORD=$password
                   EOF_INNER
                 '';
+              };
+
+              systemd.services.radarr-bootstrap-user = {
+                description = "Bootstrap Radarr startup user";
+                wantedBy = [ "multi-user.target" ];
+                wants = [ "network-online.target" "radarr.service" "radarr-credentials.service" ];
+                after = [ "network-online.target" "radarr.service" "radarr-credentials.service" ];
+                path = with pkgs; [
+                  bash
+                  coreutils
+                  curl
+                  jq
+                  gnused
+                  systemd
+                ];
+                serviceConfig = {
+                  Type = "oneshot";
+                };
+                script = radarrBootstrapUserScript;
               };
 
               services.openssh = {

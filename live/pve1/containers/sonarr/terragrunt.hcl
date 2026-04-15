@@ -40,6 +40,8 @@ inputs = merge(include.lxc_common.inputs, {
   flake_attr = "sonarr"
   post_rebuild_commands = [
     <<-EOT
+      systemctl restart sonarr-credentials.service
+      systemctl restart sonarr-bootstrap-user.service
       printf '%s' '${base64encode(file("${get_repo_root()}/nix/sonarr/sonarr-bootstrap.sh"))}' | base64 -d >/tmp/sonarr-bootstrap.sh
       chmod 700 /tmp/sonarr-bootstrap.sh
       /tmp/sonarr-bootstrap.sh

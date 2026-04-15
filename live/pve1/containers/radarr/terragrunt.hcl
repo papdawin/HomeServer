@@ -40,6 +40,8 @@ inputs = merge(include.lxc_common.inputs, {
   flake_attr = "radarr"
   post_rebuild_commands = [
     <<-EOT
+      systemctl restart radarr-credentials.service
+      systemctl restart radarr-bootstrap-user.service
       printf '%s' '${base64encode(file("${get_repo_root()}/nix/radarr/radarr-bootstrap.sh"))}' | base64 -d >/tmp/radarr-bootstrap.sh
       chmod 700 /tmp/radarr-bootstrap.sh
       /tmp/radarr-bootstrap.sh

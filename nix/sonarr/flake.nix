@@ -12,6 +12,8 @@
         ++ [
           ({ pkgs, ... }:
             let
+              sonarrBootstrapUsername = "papdawin";
+              sonarrBootstrapUserScript = builtins.readFile ./sonarr-bootstrap-user.sh;
               qbittorrentHost = "192.168.68.26";
               qbittorrentPort = 8080;
             in {
@@ -68,14 +70,36 @@
 
                   qbt_username="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["mediaautomation"]["qbittorrent"]["username"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
                   qbt_password="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["mediaautomation"]["qbittorrent"]["password"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
+                  password="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["sonarr"]["password"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
 
                   cat > /run/sonarr-bootstrap.env <<EOF_INNER
                   SONARR_QBITTORRENT_HOST=${qbittorrentHost}
                   SONARR_QBITTORRENT_PORT=${toString qbittorrentPort}
                   SONARR_QBITTORRENT_USERNAME=$qbt_username
                   SONARR_QBITTORRENT_PASSWORD=$qbt_password
+                  SONARR_BOOTSTRAP_USERNAME=${sonarrBootstrapUsername}
+                  SONARR_BOOTSTRAP_PASSWORD=$password
                   EOF_INNER
                 '';
+              };
+
+              systemd.services.sonarr-bootstrap-user = {
+                description = "Bootstrap Sonarr startup user";
+                wantedBy = [ "multi-user.target" ];
+                wants = [ "network-online.target" "sonarr.service" "sonarr-credentials.service" ];
+                after = [ "network-online.target" "sonarr.service" "sonarr-credentials.service" ];
+                path = with pkgs; [
+                  bash
+                  coreutils
+                  curl
+                  jq
+                  gnused
+                  systemd
+                ];
+                serviceConfig = {
+                  Type = "oneshot";
+                };
+                script = sonarrBootstrapUserScript;
               };
 
               services.openssh = {
