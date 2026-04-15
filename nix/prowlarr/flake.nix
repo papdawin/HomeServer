@@ -77,11 +77,25 @@
                 set -eu
                 umask 077
 
-                password="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["prowlarr"]["password"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
+                sops_secret_file="/etc/nixos/secrets/common.sops.yaml"
+                sops_private_key="/etc/nixos/secrets/bootstrap-ssh-private-key"
+
+                read_sops_secret() {
+                  local extract="$1"
+                  SOPS_AGE_SSH_PRIVATE_KEY_FILE="$sops_private_key" sops -d --extract "$extract" "$sops_secret_file" 2>/dev/null | tr -d '\n' || true
+                }
+
+                password="$(read_sops_secret '["services"]["prowlarr"]["password"]')"
+                ncore_username="$(read_sops_secret '["services"]["mediaautomation"]["ncore"]["username"]')"
+                ncore_password="$(read_sops_secret '["services"]["mediaautomation"]["ncore"]["password"]')"
+
+                [ -n "$password" ] || { echo "Missing services.prowlarr.password in $sops_secret_file" >&2; exit 1; }
 
                 cat > /run/prowlarr-bootstrap.env <<EOF
                 PROWLARR_BOOTSTRAP_USERNAME=${prowlarrBootstrapUsername}
                 PROWLARR_BOOTSTRAP_PASSWORD=$password
+                PROWLARR_NCORE_USERNAME=$ncore_username
+                PROWLARR_NCORE_PASSWORD=$ncore_password
                 EOF
               '';
             };

@@ -136,6 +136,174 @@ upsert_application() {
   log "Updated $app_type application"
 }
 
+get_default_app_profile_id() {
+  local app_profile_id
+  app_profile_id="$(
+    api_call GET "appprofile" | jq -r '
+      [ .[] | .id // 0 | select(. > 0) ][0] // empty
+    '
+  )"
+  [ -n "$app_profile_id" ] || { log "No valid app profile id returned by /appprofile"; return 1; }
+  printf '%s' "$app_profile_id"
+}
+
+build_ncore_fields() {
+  local schema="$1" username="$2" password="$3"
+  local schema_definition_file
+  schema_definition_file="$(
+    printf '%s' "$schema" | jq -r '
+      ((.fields // []) | map(select((.name // "" | ascii_downcase) == "definitionfile")) | .[0].value) // empty
+    '
+  )"
+
+  jq -c \
+    --arg username "$username" \
+    --arg password "$password" \
+    --arg schemaDefinitionFile "$schema_definition_file" \
+    '
+      (.fields // []) | map(
+        if (.name // "" | ascii_downcase) == "username" then .value = $username
+        elif (.name // "" | ascii_downcase) == "password" then .value = $password
+        elif (.name // "" | ascii_downcase) == "definitionfile" then
+          .value = (
+            if ($schemaDefinitionFile | length) > 0 then $schemaDefinitionFile
+            elif ((.value // "" | tostring | length) > 0) then (.value | tostring)
+            else "ncore"
+            end
+          )
+        else .
+        end
+      )
+    ' <<<"$schema"
+}
+
+upsert_ncore_indexer() {
+  local schemas schema fields existing existing_id implementation contract protocol payload app_profile_id
+
+  if [ -z "${ncore_username:-}" ] || [ -z "${ncore_password:-}" ]; then
+    log "Skipping nCore indexer bootstrap: missing PROWLARR_NCORE_USERNAME/PROWLARR_NCORE_PASSWORD"
+    return 0
+  fi
+
+  app_profile_id="$(get_default_app_profile_id)" || return 1
+
+  schemas="$(api_call GET "indexer/schema")"
+  schema="$(
+    printf '%s' "$schemas" | jq -c '
+      .[] | select(
+        ((.implementation // "" | ascii_downcase) == "ncore")
+        or ((.name // "" | ascii_downcase) == "ncore")
+        or ((.implementationName // "" | ascii_downcase) == "ncore")
+        or (
+          ((.fields // []) | map(
+            select(
+              (.name // "" | ascii_downcase) == "definitionfile"
+              and ((.value // "" | tostring | ascii_downcase) | contains("ncore"))
+            )
+          ) | length) > 0
+        )
+      )
+    ' | head -n1
+  )"
+
+  if [ -z "$schema" ]; then
+    schema="$(
+      printf '%s' "$schemas" | jq -c '
+        .[] | select(
+          (.implementation // "" | ascii_downcase) == "cardigann"
+          and ((.fields // []) | map(select((.name // "" | ascii_downcase) == "definitionfile")) | length) > 0
+        )
+      ' | head -n1
+    )"
+  fi
+
+  [ -n "$schema" ] || { log "Schema not found for nCore indexer"; return 1; }
+
+  fields="$(build_ncore_fields "$schema" "$ncore_username" "$ncore_password")"
+  implementation="$(printf '%s' "$schema" | jq -r '.implementation')"
+  contract="$(printf '%s' "$schema" | jq -r '.configContract // empty')"
+  protocol="$(printf '%s' "$schema" | jq -r '.protocol // "torrent"')"
+
+  existing="$(
+    api_call GET "indexer" | jq -c '
+      .[] | select(
+        ((.implementation // "" | ascii_downcase) == "ncore")
+        or ((.name // "" | ascii_downcase) | contains("ncore"))
+        or (
+          ((.fields // []) | map(
+            select(
+              (.name // "" | ascii_downcase) == "definitionfile"
+              and ((.value // "" | tostring | ascii_downcase) | contains("ncore"))
+            )
+          ) | length) > 0
+        )
+      )
+    ' | head -n1
+  )"
+
+  if [ -z "$existing" ]; then
+    payload="$(
+      jq -cn \
+        --arg name "nCore" \
+        --arg implementation "$implementation" \
+        --arg configContract "$contract" \
+        --arg protocol "$protocol" \
+        --argjson appProfileId "$app_profile_id" \
+        --argjson fields "$fields" \
+        '{
+          name: $name,
+          enable: true,
+          priority: 25,
+          appProfileId: $appProfileId,
+          implementation: $implementation,
+          fields: $fields,
+          tags: []
+        }
+        + (if $configContract == "" then {} else { configContract: $configContract } end)
+        + { protocol: $protocol }'
+    )"
+    api_call POST "indexer" "$payload" >/dev/null
+    log "Configured nCore indexer"
+    return 0
+  fi
+
+  existing_id="$(printf '%s' "$existing" | jq -r '.id')"
+  payload="$(jq -c --argjson fields "$fields" --argjson appProfileId "$app_profile_id" '. | .enable = true | .name = "nCore" | .appProfileId = $appProfileId | .fields = $fields' <<<"$existing")"
+  api_call PUT "indexer/$existing_id" "$payload" >/dev/null
+  log "Updated nCore indexer"
+}
+
+verify_ncore_indexer_present() {
+  if api_call GET "indexer" | jq -e '
+    [
+      .[] | select(
+        ((.implementation // "" | ascii_downcase) == "ncore")
+        or ((.name // "" | ascii_downcase) | contains("ncore"))
+        or (
+          ((.fields // []) | map(
+            select(
+              (.name // "" | ascii_downcase) == "definitionfile"
+              and ((.value // "" | tostring | ascii_downcase) | contains("ncore"))
+            )
+          ) | length) > 0
+        )
+      )
+    ] | length > 0
+  ' >/dev/null; then
+    log "Verified nCore indexer is present"
+    return 0
+  fi
+
+  log "nCore indexer is still missing after bootstrap"
+  return 1
+}
+
+systemctl start prowlarr-credentials.service
+[ -f /run/prowlarr-bootstrap.env ] && . /run/prowlarr-bootstrap.env
+
+ncore_username="${PROWLARR_NCORE_USERNAME:-}"
+ncore_password="${PROWLARR_NCORE_PASSWORD:-}"
+
 prowlarr_api_key="$(wait_for_file_value "$prowlarr_config_xml" "ApiKey" || true)"
 [ -n "$prowlarr_api_key" ] || { log "Prowlarr API key not found in $prowlarr_config_xml"; exit 1; }
 
@@ -150,5 +318,7 @@ wait_arr "$sonarr_host" 8989 "$sonarr_api_key" || { log "Sonarr did not become r
 
 upsert_application "Radarr" "$radarr_host" 7878 "$radarr_api_key"
 upsert_application "Sonarr" "$sonarr_host" 8989 "$sonarr_api_key"
+upsert_ncore_indexer
+verify_ncore_indexer_present
 
 log "Bootstrap completed"

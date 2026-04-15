@@ -65,6 +65,7 @@ Optional/common:
 
 Shared container secrets:
 - `live/pve1/containers/common.sops.yaml` holds encrypted values used by container flakes (including `services.jellyfin.password`, `services.qbittorrent.password`, and `services.mediaautomation.*` integration credentials).
+- Prowlarr nCore bootstrap reads `services.mediaautomation.ncore.username` and `services.mediaautomation.ncore.password` from that same SOPS file.
 
 ## Shared Media HDD (Media Stack)
 
