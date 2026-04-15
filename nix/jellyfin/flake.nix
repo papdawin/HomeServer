@@ -14,6 +14,7 @@
             let
               jellyfinBootstrapUsername = "papdawin";
               jellyfinBootstrapScript = builtins.readFile ./jellyfin-bootstrap-user.sh;
+              jellyfinBootstrapLibrariesScript = builtins.readFile ./jellyfin-bootstrap-libraries.sh;
             in {
             system.stateVersion = "25.11";
             boot.isContainer = true;
@@ -99,6 +100,28 @@
                 RestartSec = "15s";
               };
               script = jellyfinBootstrapScript;
+            };
+
+            systemd.services.jellyfin-bootstrap-libraries = {
+              description = "Bootstrap Jellyfin media libraries";
+              wantedBy = [ "multi-user.target" ];
+              wants = [ "network-online.target" "jellyfin.service" "jellyfin-credentials.service" "jellyfin-bootstrap.service" ];
+              after = [ "network-online.target" "jellyfin.service" "jellyfin-credentials.service" "jellyfin-bootstrap.service" ];
+              path = with pkgs; [
+                bash
+                coreutils
+                curl
+                jq
+                gnugrep
+                gnused
+                systemd
+              ];
+              serviceConfig = {
+                Type = "oneshot";
+                Restart = "on-failure";
+                RestartSec = "15s";
+              };
+              script = jellyfinBootstrapLibrariesScript;
             };
 
             services.openssh = {
