@@ -65,6 +65,7 @@ Optional/common:
 
 Shared container secrets:
 - `live/pve1/containers/common.sops.yaml` holds encrypted values used by container flakes (including `services.jellyfin.password`, `services.qbittorrent.password`, and `services.mediaautomation.*` integration credentials).
+- Prowlarr nCore bootstrap reads `services.mediaautomation.ncore.username` and `services.mediaautomation.ncore.password` from that same SOPS file.
 
 ## Shared Media HDD (Media Stack)
 
@@ -92,6 +93,31 @@ terragrunt apply --working-dir live/pve1/containers/radarr
 terragrunt apply --working-dir live/pve1/containers/sonarr
 terragrunt apply --working-dir live/pve1/containers/prowlarr
 terragrunt apply --working-dir live/pve1/containers/jellyseerr
+```
+
+## Indexer Ownership (Prowlarr -> Radarr/Sonarr)
+
+- Configure indexers in **Prowlarr**, not directly in Radarr/Sonarr.
+- Radarr/Sonarr should be connected as Prowlarr Applications with `FullSync`.
+- This repo bootstrap now verifies that nCore exists in Prowlarr and appears in Radarr.
+- Bootstrap target hosts/ports are configured in `nix/prowlarr/flake.nix` via:
+  `PROWLARR_URL`, `PROWLARR_RADARR_HOST`, `PROWLARR_RADARR_PORT`,
+  `PROWLARR_SONARR_HOST`, `PROWLARR_SONARR_PORT`.
+
+Quick checks inside containers:
+
+```bash
+# In Prowlarr container
+KEY="$(sed -n 's:.*<ApiKey>\(.*\)</ApiKey>.*:\1:p' /media/appdata/prowlarr/config.xml | head -n1)"
+curl -fsS -H "X-Api-Key: $KEY" http://127.0.0.1:9696/api/v1/indexer | jq -r '.[] | .name'
+
+# In Radarr container
+KEY="$(sed -n 's:.*<ApiKey>\(.*\)</ApiKey>.*:\1:p' /media/appdata/radarr/config.xml | head -n1)"
+curl -fsS -H "X-Api-Key: $KEY" http://127.0.0.1:7878/api/v3/indexer | jq -r '.[] | .name'
+
+# From Prowlarr container, query Radarr on its container IP
+RADARR_KEY="$(sed -n 's:.*<ApiKey>\(.*\)</ApiKey>.*:\1:p' /media/appdata/radarr/config.xml | head -n1)"
+curl -fsS -H "X-Api-Key: $RADARR_KEY" http://192.168.68.29:7878/api/v3/indexer | jq -r '.[] | .name'
 ```
 
 Re-apply is idempotent:

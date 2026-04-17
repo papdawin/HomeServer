@@ -15,6 +15,9 @@ services:
             password: ENC[AES256_GCM,data:jRn5mWAfQOk=,iv:oaEZbh27sLHMp403+jrWLbNfz/rsISeklQmAJaRvuMw=,tag:iWqlHJSFo82IDrlBWphK3Q==,type:str]
         jellyseerr:
             apiKey: ENC[AES256_GCM,data:ApVOFBYQpdD2Kvh4gAIVR+8KYTtH+l99COrQ/BlRLjyUktNZkpfDOW0ERSpx2Mw+,iv:Bbbdg6xbZC8kGCkHP3+swAZnUpabn5QxprC+AHTjkKo=,tag:dJHztAoOs0B2E9V0gG3WqA==,type:str]
+        ncore:
+            username: ENC[AES256_GCM,data:7KNDJpDEl0w78Q==,iv:gT5v5gX2dL0cHaId8FQZ5gErg4UGmuGXpcfs+3U+Mi0=,tag:jtPmZpgP/AWgn85NZuBsPA==,type:str]
+            password: ENC[AES256_GCM,data:F56mhnJRuoXEZ2WUavw=,iv:3tTH1qOKH1EKCqsV/ULIar5X9Dy/1aSOBQPuD6avHwI=,tag:QbuY+JWGFn1rU2jd7CuV8g==,type:str]
     prowlarr:
         password: ENC[AES256_GCM,data:TuNiDBKyq48=,iv:hW2cY3LW7995flex0fHda8nxSSS+CDKiW1zj2JKAktk=,tag:W6MHTZL3XnF5Z+Kk+CQsqw==,type:str]
     sonarr:
@@ -33,7 +36,7 @@ sops:
             pdoZAFeSB2OEGAMmAKE08WSSE1E6Vsn0+HhHGDnVkGkUSOHJdddRtKeDd2GlocS6
             /tEmNA==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-04-15T04:46:29Z"
-    mac: ENC[AES256_GCM,data:GtMNvUzidZ9+qQyh+bdt5vbNjSbRv2fvpf+4WW0uYPdB9YTT4ry1zjZPC79FUgYM00yAyuxEfA07o5g86q/QFPk39VqnSf6K8+GzFZ+9CSv8R8EWh+ir9d3OzcctNDxHjWFOnFAgKSJEGrr9zQzEtwXXNd6nxHXu70RTRJV1kwQ=,iv:wiiF3RJ6VSSSuPRHUWThV5gHyXSx10Q1khYB8ePJvhY=,tag:4uARNUVXuJ3uwFuQm9RTBw==,type:str]
+    lastmodified: "2026-04-15T14:34:44Z"
+    mac: ENC[AES256_GCM,data:+dOssevHwhruEZ+p9IdC5AsQzYxQe3ex+V6AsM+hW4DZtgIefTgiMvcqG20YkFCakESekkcrEkRaX1PAT6XMsy3jay486OmYwTDN9vQL8LasyJtgDYt12eTDcDUZXuZVZEhv/i0DUW5NxQw54ssG6+HaqZj8n45kjEvImn5juo0=,iv:HG4YLLeklWuUQgHVZBcEhisOt/AXAGkuYp6i6QpeKaE=,tag:p3/1262xXmMud93Ev94cEA==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.11.0

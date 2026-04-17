@@ -54,6 +54,50 @@ wait_api_ready() {
   return 1
 }
 
+wait_qbt_ready() {
+  local i=0
+  local qbt_base_url="http://${qbt_host}:${qbt_port}"
+  while [ "$i" -lt 120 ]; do
+    if curl -fsS -o /dev/null "$qbt_base_url"; then
+      return 0
+    fi
+    i="$((i + 1))"
+    sleep 2
+  done
+  return 1
+}
+
+qbt_login() {
+  local qbt_api_url="http://${qbt_host}:${qbt_port}/api/v2"
+  local body
+  body="$(
+    curl -fsS \
+      -H "Referer: http://${qbt_host}:${qbt_port}" \
+      --data-urlencode "username=$qbt_username" \
+      --data-urlencode "password=$qbt_password" \
+      "$qbt_api_url/auth/login" \
+      -c "$qbt_cookie_file" || true
+  )"
+  [ "$(printf '%s' "$body" | tr -d '\r\n')" = "Ok." ]
+}
+
+ensure_qbit_category_path() {
+  local category="$1" save_path="$2"
+  local qbt_api_url="http://${qbt_host}:${qbt_port}/api/v2"
+  curl -fsS -o /dev/null \
+    -H "Referer: http://${qbt_host}:${qbt_port}" \
+    -b "$qbt_cookie_file" \
+    --data-urlencode "category=$category" \
+    --data-urlencode "savePath=$save_path" \
+    "$qbt_api_url/torrents/createCategory" || true
+  curl -fsS -o /dev/null \
+    -H "Referer: http://${qbt_host}:${qbt_port}" \
+    -b "$qbt_cookie_file" \
+    --data-urlencode "category=$category" \
+    --data-urlencode "savePath=$save_path" \
+    "$qbt_api_url/torrents/editCategory"
+}
+
 ensure_root_folder() {
   local folders
   folders="$(api_call GET "rootfolder")"
@@ -135,6 +179,23 @@ ensure_download_client() {
   log "Updated qBittorrent download client"
 }
 
+verify_download_client() {
+  if api_call GET "downloadclient" | jq -e '
+    [
+      .[] | select(
+        ((.implementation // "" | ascii_downcase) == "qbittorrent")
+        and (.enable == true)
+      )
+    ] | length > 0
+  ' >/dev/null; then
+    log "Verified qBittorrent download client in Sonarr"
+    return 0
+  fi
+
+  log "qBittorrent download client not configured in Sonarr"
+  return 1
+}
+
 enable_completed_download_handling() {
   local cfg updated
   cfg="$(api_call GET "config/downloadClient" || true)"
@@ -144,7 +205,9 @@ enable_completed_download_handling() {
   api_call PUT "config/downloadClient" "$updated" >/dev/null || true
 }
 
-systemctl start sonarr-credentials.service
+if ! systemctl start sonarr-credentials.service; then
+  log "sonarr-credentials.service start failed; using existing /run/sonarr-bootstrap.env if present"
+fi
 # shellcheck disable=SC1091
 . /run/sonarr-bootstrap.env
 
@@ -152,6 +215,8 @@ qbt_host="${SONARR_QBITTORRENT_HOST:-192.168.68.26}"
 qbt_port="${SONARR_QBITTORRENT_PORT:-8080}"
 qbt_username="${SONARR_QBITTORRENT_USERNAME:-}"
 qbt_password="${SONARR_QBITTORRENT_PASSWORD:-}"
+qbt_cookie_file="$(mktemp)"
+trap 'rm -f "$qbt_cookie_file"' EXIT
 
 [ -n "$qbt_username" ] && [ -n "$qbt_password" ] || { log "Missing qBittorrent credentials"; exit 1; }
 
@@ -159,9 +224,13 @@ sonarr_api_key="$(wait_for_file_value "$config_xml" "ApiKey" || true)"
 [ -n "$sonarr_api_key" ] || { log "Sonarr API key not found in $config_xml"; exit 1; }
 
 wait_api_ready || { log "Sonarr API did not become ready in time"; exit 1; }
+wait_qbt_ready || { log "qBittorrent did not become ready in time"; exit 1; }
+qbt_login || { log "Failed to authenticate to qBittorrent"; exit 1; }
+ensure_qbit_category_path "sonarr" "/media/downloads/sonarr" || log "Warning: could not set qBittorrent category path for sonarr; continuing"
 
 ensure_root_folder
 ensure_download_client
+verify_download_client
 enable_completed_download_handling
 
 log "Bootstrap completed"

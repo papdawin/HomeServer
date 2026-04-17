@@ -42,8 +42,9 @@ inputs = merge(include.lxc_common.inputs, {
     <<-EOT
       systemctl restart jellyfin-credentials.service
       systemctl restart jellyfin-bootstrap.service
-      systemctl --no-pager --full status jellyfin-credentials.service jellyfin-bootstrap.service || true
-      journalctl -u jellyfin-credentials.service -u jellyfin-bootstrap.service -n 200 --no-pager || true
+      systemctl restart jellyfin-bootstrap-libraries.service
+      systemctl --no-pager --full status jellyfin-credentials.service jellyfin-bootstrap.service jellyfin-bootstrap-libraries.service || true
+      journalctl -u jellyfin-credentials.service -u jellyfin-bootstrap.service -u jellyfin-bootstrap-libraries.service -n 200 --no-pager || true
     EOT
   ]
   mount_points = [
