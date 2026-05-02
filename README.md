@@ -23,6 +23,7 @@ _Proxmox UI screencapture showing the resources and containers provisioned by Te
 - `modules/lxc`: The "definitions" of my LXC containers, networking, mounts, which then applies the matching Nix flake over SSH.
 - `modules/storage-directory`: Creates the Proxmox directory storage used by the media stack.
 - `live/pve1/storage/media`: Defines shared HDD-backed storage.
+- `live/pve1/storage/appdata`: Defines separate HDD-backed storage for app data volumes.
 - `live/pve1/containers/*`: One stack per service, with explicit dependencies.
 - `nix/<service>/flake.nix`: Service runtime config (ports, users, firewall, bootstrap services).
 - `scripts/ensure-nixos-template.sh`: Auto-downloads NixOS LXC template if missing.
@@ -32,6 +33,7 @@ _Proxmox UI screencapture showing the resources and containers provisioned by Te
 | Stack | VMID | IP | Purpose |
 | --- | ---: | --- | --- |
 | `storage/media` | - | Proxmox storage | Shared directory storage (`rootdir`) for media volumes. |
+| `storage/appdata` | - | Proxmox storage | Shared directory storage (`rootdir`) for app data volumes. |
 | `storage-bootstrap` | 124 | 192.168.68.24 | Initializes `/media` layout, permissions, and helper appdata mounts. |
 | `jellyfin` | 125 | 192.168.68.25 | Media streaming server. |
 | `qbittorrent` | 126 | 192.168.68.26 | Download client for automation pipeline. |
@@ -55,12 +57,13 @@ _My currently existing containers visualized via excalidraw._
 
 ```bash
 terragrunt apply --working-dir live/pve1/storage/media
+terragrunt apply --working-dir live/pve1/storage/appdata
 ```
 
 3. Apply containers:
 
 ```bash
-terragrunt run --all apply --working-dir live/pve1/containers
+terragrunt run --all apply --queue-include-external --working-dir live/pve1/containers
 ```
 
 For one service only:

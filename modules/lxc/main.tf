@@ -94,13 +94,14 @@ resource "null_resource" "flake_apply" {
   count = var.flake_file != "" ? 1 : 0
 
   triggers = {
-    container_id      = tostring(var.vmid)
-    flake_sha         = local.flake_tree_sha
-    common_sops_sha   = filesha256(var.common_sops_file)
-    bootstrap_key_sha = filesha256(pathexpand(var.bootstrap_private_key_file))
-    post_rebuild_sha  = sha256(join("\n", var.post_rebuild_commands))
-    flake_attr        = var.flake_attr
-    target_ip         = split("/", trimspace(var.ipv4_cidr))[0]
+    container_id          = tostring(var.vmid)
+    container_mac_address = proxmox_virtual_environment_container.this.network_interface[0].mac_address
+    flake_sha             = local.flake_tree_sha
+    common_sops_sha       = filesha256(var.common_sops_file)
+    bootstrap_key_sha     = filesha256(pathexpand(var.bootstrap_private_key_file))
+    post_rebuild_sha      = sha256(join("\n", var.post_rebuild_commands))
+    flake_attr            = var.flake_attr
+    target_ip             = split("/", trimspace(var.ipv4_cidr))[0]
   }
 
   connection {
@@ -142,8 +143,8 @@ resource "null_resource" "flake_apply" {
         "mkdir -p /etc/nix",
         "rm -f /etc/nixos/flake.lock",
         "bash -lc 'if [ -w /etc/nix ] && { [ ! -e /etc/nix/nix.conf ] || [ -w /etc/nix/nix.conf ]; }; then grep -q \"experimental-features\" /etc/nix/nix.conf 2>/dev/null || echo \"experimental-features = nix-command flakes\" >> /etc/nix/nix.conf; grep -q \"cache\\.garnix\\.io\" /etc/nix/nix.conf 2>/dev/null || echo \"extra-substituters = https://cache.garnix.io\" >> /etc/nix/nix.conf; grep -q \"CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g\" /etc/nix/nix.conf 2>/dev/null || echo \"extra-trusted-public-keys = cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=\" >> /etc/nix/nix.conf; fi'",
-        "bash -lc 'set -euxo pipefail; mkdir -p /var/tmp/nix-build; chmod 1777 /var/tmp/nix-build || true; df -h / /nix/store || true; df -i / /nix/store || true; nix-collect-garbage -d || true; nix-store --optimise || true; rm -rf /var/tmp/nix-build/* /tmp/nix-build-* || true; df -h / /nix/store || true; df -i / /nix/store || true'",
-        "bash -lc 'set -euxo pipefail; nixos-rebuild switch --accept-flake-config --impure --flake /etc/nixos#${var.flake_attr} -L --show-trace 2>&1 | tee /tmp/nixos-rebuild-${var.flake_attr}.log'",
+        "bash -lc 'set -euxo pipefail; install -d -m 0755 -o root -g root /var/lib/nix-build; df -h / /nix/store || true; df -i / /nix/store || true; nix-collect-garbage -d || true; nix-store --optimise || true; rm -rf /var/lib/nix-build/* /tmp/nix-build-* || true; df -h / /nix/store || true; df -i / /nix/store || true'",
+        "bash -lc 'set -euxo pipefail; NIX_CONFIG=\"build-dir = /var/lib/nix-build\" nixos-rebuild switch --accept-flake-config --impure --flake /etc/nixos#${var.flake_attr} -L --show-trace 2>&1 | tee /tmp/nixos-rebuild-${var.flake_attr}.log'",
       ],
       var.post_rebuild_commands,
     )

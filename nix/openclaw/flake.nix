@@ -29,7 +29,7 @@
             boot.tmp.useTmpfs = false;
 
             nix.settings = {
-              build-dir = "/var/tmp/nix-build";
+              build-dir = "/var/lib/nix-build";
               extra-substituters = [ "https://cache.garnix.io" ];
               extra-trusted-public-keys = [
                 "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
@@ -48,7 +48,7 @@
                 where = "/sys/kernel/debug";
               }
             ];
-            systemd.tmpfiles.rules = [ "d /var/tmp/nix-build 1777 root root - -" ];
+            systemd.tmpfiles.rules = [ "d /var/lib/nix-build 0755 root root - -" ];
 
             services.openclaw-gateway = {
               enable = true;

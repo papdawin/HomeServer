@@ -19,16 +19,11 @@ dependency "storage_bootstrap" {
     mount_points = [
       {
         path              = "/media"
-        path_in_datastore = "${trimspace(get_env("MEDIA_STORAGE_ID", "media"))}:124/vm-124-disk-0.raw"
-        volume            = "${trimspace(get_env("MEDIA_STORAGE_ID", "media"))}:124/vm-124-disk-0.raw"
+        path_in_datastore = "${include.lxc_common.locals.media_volume_fallback}"
+        volume            = "${include.lxc_common.locals.media_volume_fallback}"
       }
     ]
   }
-}
-
-locals {
-  media_storage_id      = trimspace(get_env("MEDIA_STORAGE_ID", "media"))
-  media_volume_fallback = "${local.media_storage_id}:124/vm-124-disk-0.raw"
 }
 
 inputs = merge(include.lxc_common.inputs, {
@@ -53,7 +48,7 @@ inputs = merge(include.lxc_common.inputs, {
       path = "/media"
       volume = try(
         [for mount_point in dependency.storage_bootstrap.outputs.mount_points : try(mount_point.path_in_datastore, mount_point.volume) if mount_point.path == "/media"][0],
-        local.media_volume_fallback
+        include.lxc_common.locals.media_volume_fallback
       )
     },
   ]

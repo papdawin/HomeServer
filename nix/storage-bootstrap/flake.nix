@@ -9,7 +9,7 @@
       modules = [
         ({ pkgs, ... }:
           let
-            doneFile = "/var/lib/storage-bootstrap/bootstrap.done";
+            doneFile = "/var/lib/storage-bootstrap/bootstrap-media-v1.done";
           in {
             system.stateVersion = "25.11";
             boot.isContainer = true;
@@ -71,11 +71,6 @@
                   exit 1
                 }
 
-                mountpoint -q /appdata-jellyfin || {
-                  echo "Expected /appdata-jellyfin to be a mounted Proxmox volume" >&2
-                  exit 1
-                }
-
                 install -d -m 2775 -o root -g media /media
                 install -d -m 2775 -o root -g media /media/movies
                 install -d -m 2775 -o root -g media /media/shows
@@ -92,29 +87,20 @@
                 install -d -m 2775 -o root -g media /media/appdata/sonarr
                 install -d -m 2775 -o root -g media /media/appdata/prowlarr
                 install -d -m 2775 -o root -g media /media/appdata/jellyseerr
-                install -d -m 2775 -o root -g media /appdata-jellyfin
 
                 install -d -m 0755 -o root -g root "$(dirname "${doneFile}")"
                 touch "${doneFile}"
               '';
             };
 
-            systemd.services."storage-bootstrap-shutdown" = {
-              description = "Power off helper container after bootstrap";
-              wantedBy = [ "multi-user.target" ];
-              after = [ "storage-bootstrap.service" ];
-              serviceConfig = {
-                Type = "oneshot";
-              };
-              script = ''
-                set -eu
-
-                [ -f "${doneFile}" ] || exit 0
-
-                # Delay shutdown so Terraform's SSH provisioner can exit cleanly.
-                ${pkgs.systemd}/bin/shutdown -P +1 "storage bootstrap completed"
-              '';
-            };
+            # Do not power off this helper from inside NixOS. Terraform applies
+            # this flake over SSH, so a boot-time shutdown races the provisioner
+            # before it can upload and switch to a fixed generation.
+            system.activationScripts.cancelLegacyStorageBootstrapShutdown.text = ''
+              ${pkgs.systemd}/bin/shutdown -c 2>/dev/null || true
+              ${pkgs.systemd}/bin/systemctl disable storage-bootstrap-shutdown.service 2>/dev/null || true
+              ${pkgs.systemd}/bin/systemctl reset-failed storage-bootstrap-shutdown.service 2>/dev/null || true
+            '';
 
             services.openssh = {
               enable = true;

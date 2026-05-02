@@ -7,6 +7,15 @@ include "lxc_common" {
   expose = true
 }
 
+dependency "media_storage" {
+  config_path  = "../../storage/media"
+  skip_outputs = true
+}
+
+dependencies {
+  paths = ["../../storage/media"]
+}
+
 terraform {
   source = "${get_repo_root()}/modules/lxc"
 
@@ -20,27 +29,6 @@ terraform {
       include.lxc_common.locals.template_url,
     ]
   }
-
-  # `terragrunt run --all --working-dir live/pve1/containers` does not include
-  # units outside that folder by default. Ensure the external media storage
-  # unit is applied first so storage-bootstrap can safely consume its outputs.
-  before_hook "ensure_media_storage" {
-    commands = ["apply"]
-    execute = [
-      "terragrunt",
-      "apply",
-      "-auto-approve",
-      "--non-interactive",
-      "--working-dir",
-      "${get_repo_root()}/live/pve1/storage/media",
-    ]
-  }
-}
-
-locals {
-  media_storage_id  = trimspace(get_env("MEDIA_STORAGE_ID", "media"))
-  media_volume_size = trimspace(get_env("MEDIA_VOLUME_SIZE", "2T"))
-  helper_start      = lower(trimspace(get_env("STORAGE_BOOTSTRAP_START", "true"))) == "true"
 }
 
 inputs = merge(include.lxc_common.inputs, {
@@ -48,20 +36,17 @@ inputs = merge(include.lxc_common.inputs, {
   hostname   = "storage-bootstrap"
   ipv4_cidr  = "192.168.68.24/24"
   tags       = ["lxc", "nixos", "storage", "bootstrap"]
-  start      = local.helper_start
+  start      = true
   onboot     = false
   flake_file = "${get_repo_root()}/nix/storage-bootstrap/flake.nix"
   flake_attr = "storagebootstrap"
+  post_rebuild_commands = [
+    "shutdown -P +5 'storage bootstrap apply completed'",
+  ]
   mount_points = [
     {
       path   = "/media"
-      volume = local.media_storage_id
-      size   = local.media_volume_size
-    },
-    {
-      path   = "/appdata-jellyfin"
-      volume = local.media_storage_id
-      size   = "20G"
+      volume = include.lxc_common.locals.media_mount_volume_ref
     }
   ]
 })

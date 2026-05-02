@@ -10,8 +10,8 @@
         (nixpkgs.lib.optional (builtins.pathExists "/etc/nixos/configuration.nix")
           (import "/etc/nixos/configuration.nix"))
         ++ [
-          ({ ... }: {
-              system.stateVersion = "25.11";
+          ({ lib, ... }: {
+              system.stateVersion = lib.mkForce "25.11";
               boot.isContainer = true;
               boot.tmp.useTmpfs = false;
 
@@ -24,8 +24,10 @@
 
               systemd.tmpfiles.rules = [
                 "d /var/lib/nomad 0755 root root - -"
-                "d /var/lib/nomad/data 0755 root root - -"
-                "d /var/lib/nomad/uploads 0755 root root - -"
+                "d /appdata 0755 root root - -"
+                "d /appdata/nomad 0755 root root - -"
+                "d /appdata/nomad/data 0755 root root - -"
+                "d /appdata/nomad/uploads 0755 root root - -"
               ];
 
               users.mutableUsers = false;
@@ -66,8 +68,8 @@
                 };
                 ports = [ "3000:3000" ];
                 volumes = [
-                  "/var/lib/nomad/data:/app/data"
-                  "/var/lib/nomad/uploads:/app/uploads"
+                  "/appdata/nomad/data:/app/data"
+                  "/appdata/nomad/uploads:/app/uploads"
                 ];
               };
 

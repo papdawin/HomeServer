@@ -163,7 +163,7 @@ variable "bootstrap_private_key_file" {
 }
 
 variable "mount_points" {
-  description = "Additional LXC mount points (bind mounts or extra volumes)."
+  description = "Additional LXC mount points. For new managed volumes, set volume to the datastore ID and size to the desired volume size."
   type = list(object({
     path   = string
     volume = string
