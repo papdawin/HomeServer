@@ -12,8 +12,13 @@ dependency "media_storage" {
   skip_outputs = true
 }
 
+dependency "appdata_storage" {
+  config_path  = "../../storage/appdata"
+  skip_outputs = true
+}
+
 dependencies {
-  paths = ["../../storage/media"]
+  paths = ["../../storage/media", "../../storage/appdata"]
 }
 
 terraform {
@@ -32,21 +37,28 @@ terraform {
 }
 
 inputs = merge(include.lxc_common.inputs, {
-  vmid       = 124
-  hostname   = "storage-bootstrap"
-  ipv4_cidr  = "192.168.68.24/24"
-  tags       = ["lxc", "nixos", "storage", "bootstrap"]
+  vmid      = 124
+  hostname  = "storage-bootstrap"
+  ipv4_cidr = "192.168.68.24/24"
+  tags      = ["lxc", "nixos", "storage", "bootstrap"]
+  # Keep this helper running so Terraform can always reach it over SSH
+  # for flake_apply and directory reconciliation.
   start      = true
-  onboot     = false
+  onboot     = true
   flake_file = "${get_repo_root()}/nix/storage-bootstrap/flake.nix"
   flake_attr = "storagebootstrap"
-  post_rebuild_commands = [
-    "shutdown -P +5 'storage bootstrap apply completed'",
-  ]
+  # This helper must run privileged so it can normalize host bind-mount
+  # ownership/modes for unprivileged application containers.
+  unprivileged          = false
+  post_rebuild_commands = []
   mount_points = [
     {
       path   = "/media"
-      volume = include.lxc_common.locals.media_mount_volume_ref
+      volume = include.lxc_common.locals.media_storage_path
+    },
+    {
+      path   = "/appdata"
+      volume = include.lxc_common.locals.appdata_storage_path
     }
   ]
 })

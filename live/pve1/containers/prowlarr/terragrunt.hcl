@@ -7,27 +7,30 @@ include "lxc_common" {
   expose = true
 }
 
-dependencies {
-  paths = ["../storage-bootstrap", "../radarr", "../sonarr"]
+locals {
+  prowlarr_vmid = 131
+
+  prowlarr_appdata_volume_ref = trimspace(get_env("PROWLARR_APPDATA_VOLUME", include.lxc_common.locals.appdata_storage_path))
+  prowlarr_appdata_mount = merge(
+    {
+      path   = "/appdata"
+      volume = local.prowlarr_appdata_volume_ref
+    },
+    startswith(local.prowlarr_appdata_volume_ref, "/") ? {} : { size = "256G" },
+  )
 }
 
-dependency "storage_bootstrap" {
-  config_path = "../storage-bootstrap"
-
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "apply"]
-  mock_outputs = {
-    mount_points = [
-      {
-        path              = "/media"
-        path_in_datastore = "${include.lxc_common.locals.media_volume_fallback}"
-        volume            = "${include.lxc_common.locals.media_volume_fallback}"
-      }
-    ]
-  }
+dependencies {
+  paths = [
+    "../../storage/appdata",
+    "../storage-bootstrap",
+    "../radarr",
+    "../sonarr",
+  ]
 }
 
 inputs = merge(include.lxc_common.inputs, {
-  vmid       = 131
+  vmid       = local.prowlarr_vmid
   hostname   = "prowlarr"
   ipv4_cidr  = "192.168.68.31/24"
   tags       = ["lxc", "nixos", "media", "prowlarr"]
@@ -35,6 +38,7 @@ inputs = merge(include.lxc_common.inputs, {
   flake_attr = "prowlarr"
   post_rebuild_commands = [
     <<-EOT
+      set -euo pipefail
       systemctl restart prowlarr-credentials.service
       systemctl restart prowlarr-bootstrap-user.service
       printf '%s' '${base64encode(file("${get_repo_root()}/nix/prowlarr/prowlarr-bootstrap.sh"))}' | base64 -d >/tmp/prowlarr-bootstrap.sh
@@ -43,13 +47,13 @@ inputs = merge(include.lxc_common.inputs, {
       rm -f /tmp/prowlarr-bootstrap.sh
     EOT
   ]
+  post_rebuild_command_timeout_seconds = 1200
+  post_rebuild_continue_on_error       = false
   mount_points = [
+    local.prowlarr_appdata_mount,
     {
-      path = "/media"
-      volume = try(
-        [for mount_point in dependency.storage_bootstrap.outputs.mount_points : try(mount_point.path_in_datastore, mount_point.volume) if mount_point.path == "/media"][0],
-        include.lxc_common.locals.media_volume_fallback
-      )
+      path   = "/media"
+      volume = include.lxc_common.locals.media_volume_fallback
     },
   ]
 })

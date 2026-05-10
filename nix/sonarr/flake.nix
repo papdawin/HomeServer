@@ -42,7 +42,7 @@
 
               services.sonarr = {
                 enable = true;
-                dataDir = "/media/appdata/sonarr";
+                dataDir = "/appdata/sonarr";
                 user = "sonarr";
                 group = "media";
                 settings.server = {
@@ -51,6 +51,35 @@
                 };
               };
               systemd.services.sonarr.serviceConfig.UMask = "0002";
+              systemd.services.sonarr.wants = [ "sonarr-migrate-appdata.service" ];
+              systemd.services.sonarr.after = [ "sonarr-migrate-appdata.service" ];
+              systemd.services.sonarr-migrate-appdata = {
+                description = "Migrate legacy Sonarr appdata from /media/appdata to /appdata";
+                before = [ "sonarr.service" ];
+                wantedBy = [ "multi-user.target" ];
+                path = with pkgs; [ coreutils findutils ];
+                serviceConfig = {
+                  Type = "oneshot";
+                };
+                script = ''
+                  set -eu
+
+                  legacy_dir="/media/appdata/sonarr"
+                  target_dir="/appdata/sonarr"
+
+                  [ -d "$legacy_dir" ] || exit 0
+                  [ -d "$target_dir" ] || mkdir -p "$target_dir"
+
+                  if [ -n "$(find "$target_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
+                    echo "sonarr-migrate-appdata: target already populated, skipping migration"
+                    exit 0
+                  fi
+
+                  cp -a "$legacy_dir/." "$target_dir/"
+                  chown -R sonarr:media "$target_dir" || true
+                  echo "sonarr-migrate-appdata: migrated data from $legacy_dir to $target_dir"
+                '';
+              };
 
               environment.systemPackages = with pkgs; [ curl jq ];
 

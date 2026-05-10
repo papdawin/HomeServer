@@ -16,6 +16,24 @@ locals {
     for file in local.flake_files :
     "${file}:${filesha256("${local.flake_dir}/${file}")};"
   ]))
+
+  wrapped_post_rebuild_commands = [
+    for idx, command in var.post_rebuild_commands :
+    <<-EOT
+      cat <<'__TG_POST_REBUILD_${idx}__' >/tmp/terragrunt-post-rebuild-${idx}.sh
+      ${command}
+      __TG_POST_REBUILD_${idx}__
+      chmod 700 /tmp/terragrunt-post-rebuild-${idx}.sh
+      set +e
+      timeout --signal=TERM --kill-after=30s ${var.post_rebuild_command_timeout_seconds}s bash /tmp/terragrunt-post-rebuild-${idx}.sh
+      rc=$?
+      rm -f /tmp/terragrunt-post-rebuild-${idx}.sh
+      if [ $rc -ne 0 ]; then
+        echo "post-rebuild command failed with status $rc" >&2
+        ${var.post_rebuild_continue_on_error ? "exit 0" : "exit $rc"}
+      fi
+    EOT
+  ]
 }
 
 resource "proxmox_virtual_environment_container" "this" {
@@ -88,6 +106,12 @@ resource "proxmox_virtual_environment_container" "this" {
   wait_for_ip {
     ipv4 = true
   }
+
+  lifecycle {
+    # Provider resolves mount volume IDs (e.g. appdata:133/vm-133-disk-0.raw)
+    # from storage IDs (e.g. appdata). Ignore that normalization drift.
+    ignore_changes = [mount_point]
+  }
 }
 
 resource "null_resource" "flake_apply" {
@@ -146,7 +170,7 @@ resource "null_resource" "flake_apply" {
         "bash -lc 'set -euxo pipefail; install -d -m 0755 -o root -g root /var/lib/nix-build; df -h / /nix/store || true; df -i / /nix/store || true; nix-collect-garbage -d || true; nix-store --optimise || true; rm -rf /var/lib/nix-build/* /tmp/nix-build-* || true; df -h / /nix/store || true; df -i / /nix/store || true'",
         "bash -lc 'set -euxo pipefail; NIX_CONFIG=\"build-dir = /var/lib/nix-build\" nixos-rebuild switch --accept-flake-config --impure --flake /etc/nixos#${var.flake_attr} -L --show-trace 2>&1 | tee /tmp/nixos-rebuild-${var.flake_attr}.log'",
       ],
-      var.post_rebuild_commands,
+      local.wrapped_post_rebuild_commands,
     )
   }
 

@@ -7,6 +7,19 @@ include "lxc_common" {
   expose = true
 }
 
+locals {
+  nomad_vmid = 133
+
+  nomad_appdata_volume_ref = trimspace(get_env("NOMAD_APPDATA_VOLUME", include.lxc_common.locals.appdata_storage_path))
+  nomad_appdata_mount = merge(
+    {
+      path   = "/appdata"
+      volume = local.nomad_appdata_volume_ref
+    },
+    startswith(local.nomad_appdata_volume_ref, "/") ? {} : { size = "32G" },
+  )
+}
+
 terraform {
   source = "${get_repo_root()}/modules/lxc"
 
@@ -21,22 +34,14 @@ terraform {
     ]
   }
 
-  # Nomad is the only container that owns the separate appdata storage.
-  before_hook "ensure_appdata_storage" {
-    commands = ["apply"]
-    execute = [
-      "terragrunt",
-      "apply",
-      "-auto-approve",
-      "--non-interactive",
-      "--working-dir",
-      "${get_repo_root()}/live/pve1/storage/appdata",
-    ]
-  }
+}
+
+dependencies {
+  paths = ["../../storage/appdata", "../storage-bootstrap"]
 }
 
 inputs = merge(include.lxc_common.inputs, {
-  vmid         = 133
+  vmid         = local.nomad_vmid
   hostname     = "nomad"
   ipv4_cidr    = "192.168.68.33/24"
   tags         = ["lxc", "nixos", "travel", "nomad"]
@@ -48,10 +53,6 @@ inputs = merge(include.lxc_common.inputs, {
   swap         = 1024
   rootfs_size  = "48G"
   mount_points = [
-    {
-      path   = "/appdata"
-      volume = include.lxc_common.locals.appdata_storage_id
-      size   = "${include.lxc_common.locals.appdata_volume_size_gib}G"
-    },
+    local.nomad_appdata_mount,
   ]
 })

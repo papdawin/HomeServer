@@ -190,3 +190,15 @@ variable "post_rebuild_commands" {
   type        = list(string)
   default     = []
 }
+
+variable "post_rebuild_command_timeout_seconds" {
+  description = "Timeout for each post-rebuild command. Commands are wrapped with timeout."
+  type        = number
+  default     = 300
+}
+
+variable "post_rebuild_continue_on_error" {
+  description = "If true, post-rebuild command failures are logged and ignored."
+  type        = bool
+  default     = true
+}

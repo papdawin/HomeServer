@@ -6,6 +6,9 @@ locals {
   pm_api_token_id       = get_env("PM_API_TOKEN_ID", "")
   pm_api_token_secret   = get_env("PM_API_TOKEN_SECRET", "")
   pm_api_token_combined = local.pm_api_token_id != "" && local.pm_api_token_secret != "" ? "${local.pm_api_token_id}=${local.pm_api_token_secret}" : local.pm_api_token_id
+  pm_username           = trimspace(get_env("PM_USERNAME", ""))
+  pm_password           = get_env("PM_PASSWORD", "")
+  pm_use_password_auth  = local.pm_username != "" && local.pm_password != ""
 }
 
 remote_state {
@@ -30,7 +33,7 @@ terraform {
 
     proxmox = {
       source  = "bpg/proxmox"
-      version = "~> 0.98"
+      version = "~> 0.106"
     }
   }
 }
@@ -38,7 +41,23 @@ terraform {
 provider "proxmox" {
   endpoint  = "${local.pm_endpoint}"
   insecure  = ${local.pm_tls_insecure}
-  api_token = "${local.pm_api_token_combined}"
+  username  = ${jsonencode(local.pm_use_password_auth ? local.pm_username : null)}
+  password  = ${jsonencode(local.pm_use_password_auth ? local.pm_password : null)}
+  api_token = ${jsonencode(!local.pm_use_password_auth && local.pm_api_token_combined != "" ? local.pm_api_token_combined : null)}
 }
 EOF
+}
+
+terraform {
+  # Prevent interactive Terraform prompts in all Terragrunt modules.
+  extra_arguments "disable_input" {
+    commands  = get_terraform_commands_that_need_input()
+    arguments = ["-input=false"]
+  }
+
+  # Optional: set TG_AUTO_APPROVE=true for unattended apply/destroy.
+  extra_arguments "auto_approve" {
+    commands  = ["apply", "destroy"]
+    arguments = lower(trimspace(get_env("TG_AUTO_APPROVE", "false"))) == "true" ? ["-auto-approve"] : []
+  }
 }

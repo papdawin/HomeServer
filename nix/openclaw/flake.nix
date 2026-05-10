@@ -23,7 +23,7 @@
           (import "/etc/nixos/configuration.nix"))
         ++ [
           nix-openclaw.nixosModules.openclaw-gateway
-          ({ pkgs, ... }: {
+          ({ lib, pkgs, ... }: {
             system.stateVersion = "25.11";
             boot.isContainer = true;
             boot.tmp.useTmpfs = false;
@@ -48,7 +48,39 @@
                 where = "/sys/kernel/debug";
               }
             ];
-            systemd.tmpfiles.rules = [ "d /var/lib/nix-build 0755 root root - -" ];
+            systemd.services.openclaw-gateway.wants = [ "openclaw-migrate-appdata.service" ];
+            systemd.services.openclaw-gateway.after = [ "openclaw-migrate-appdata.service" ];
+            systemd.services.openclaw-migrate-appdata = {
+              description = "Migrate legacy OpenClaw state to /appdata/openclaw";
+              before = [ "openclaw-gateway.service" ];
+              wantedBy = [ "multi-user.target" ];
+              path = with pkgs; [ coreutils findutils ];
+              serviceConfig = {
+                Type = "oneshot";
+              };
+              script = ''
+                set -eu
+
+                target_dir="/appdata/openclaw"
+                legacy_candidates="/root/.openclaw /var/lib/openclaw /var/lib/openclaw-gateway"
+
+                mkdir -p "$target_dir"
+
+                if [ -n "$(find "$target_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
+                  echo "openclaw-migrate-appdata: target already populated, skipping migration"
+                  exit 0
+                fi
+
+                for source_dir in $legacy_candidates; do
+                  if [ -d "$source_dir" ] && [ -n "$(find "$source_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
+                    cp -a "$source_dir/." "$target_dir/"
+                    echo "openclaw-migrate-appdata: migrated data from $source_dir to $target_dir"
+                    break
+                  fi
+                done
+                chown -R openclaw:openclaw "$target_dir" || true
+              '';
+            };
 
             services.openclaw-gateway = {
               enable = true;
@@ -78,6 +110,9 @@
                 };
               };
               environment = {
+                OPENCLAW_STATE_DIR = lib.mkForce "/appdata/openclaw";
+                XDG_CONFIG_HOME = "/appdata/openclaw";
+                HOME = "/appdata/openclaw";
                 OPENCLAW_NIX_MODE = "1";
               };
             };

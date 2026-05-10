@@ -3,7 +3,7 @@ set -euo pipefail
 
 base_url="http://127.0.0.1:9696"
 api_url="$base_url/api/v1"
-prowlarr_config_xml="/media/appdata/prowlarr/config.xml"
+prowlarr_config_xml="/appdata/prowlarr/config.xml"
 
 log() { printf '[prowlarr-bootstrap-user] %s\n' "$*" >&2; }
 

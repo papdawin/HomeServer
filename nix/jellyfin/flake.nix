@@ -41,20 +41,45 @@
             };
             users.users.jellyfin.extraGroups = [ "media" ];
 
-            systemd.tmpfiles.rules = [
-              "d /media 2775 root media -"
-              "d /media/movies 2775 root media -"
-              "d /media/shows 2775 root media -"
-              "d /media/series 2775 root media -"
-              "d /media/other 2775 root media -"
-              "d /media/music 2775 root media -"
-              "z /var/lib/jellyfin 0750 jellyfin jellyfin -"
-              "z /var/lib/jellyfin/config 0750 jellyfin jellyfin -"
-              "z /var/lib/jellyfin/log 0750 jellyfin jellyfin -"
-              "z /var/cache/jellyfin 0750 jellyfin jellyfin -"
-            ];
+            services.jellyfin = {
+              enable = true;
+              dataDir = "/appdata/jellyfin";
+              configDir = "/appdata/jellyfin/config";
+              logDir = "/appdata/jellyfin/log";
+              cacheDir = "/appdata/jellyfin/cache";
+            };
+            systemd.services.jellyfin.wants = [ "jellyfin-migrate-appdata.service" ];
+            systemd.services.jellyfin.after = [ "jellyfin-migrate-appdata.service" ];
+            systemd.services.jellyfin-migrate-appdata = {
+              description = "Migrate legacy Jellyfin state from rootfs to /appdata";
+              before = [ "jellyfin.service" ];
+              wantedBy = [ "multi-user.target" ];
+              path = with pkgs; [ coreutils findutils ];
+              serviceConfig = {
+                Type = "oneshot";
+              };
+              script = ''
+                set -eu
 
-            services.jellyfin.enable = true;
+                target_data_dir="/appdata/jellyfin"
+                target_cache_dir="/appdata/jellyfin/cache"
+                legacy_data_dir="/var/lib/jellyfin"
+                legacy_cache_dir="/var/cache/jellyfin"
+
+                mkdir -p "$target_data_dir" "$target_cache_dir"
+
+                if [ -d "$legacy_data_dir" ] && [ -z "$(find "$target_data_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
+                  cp -a "$legacy_data_dir/." "$target_data_dir/"
+                fi
+
+                if [ -d "$legacy_cache_dir" ] && [ -z "$(find "$target_cache_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
+                  cp -a "$legacy_cache_dir/." "$target_cache_dir/"
+                fi
+
+                chown -R jellyfin:jellyfin "/appdata/jellyfin" || true
+                echo "jellyfin-migrate-appdata: migration step completed"
+              '';
+            };
             environment.systemPackages = with pkgs; [ curl ];
 
             systemd.services.jellyfin-credentials = {

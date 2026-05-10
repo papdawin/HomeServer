@@ -52,7 +52,21 @@ _My currently existing containers visualized via excalidraw._
 
 ## Deploy
 
-1. Export required environment variables (`PM_API_URL`, `PM_API_TOKEN_ID`, `PM_API_TOKEN_SECRET`, `LXC_PASSWORD`, plus storage/SSH values as needed).
+1. Load your environment file and export variables:
+
+```bash
+set -a
+source .env
+set +a
+```
+
+Provider auth options (from `.env`):
+- API token auth: `PM_API_TOKEN_ID` + `PM_API_TOKEN_SECRET`
+- Username/password auth: `PM_USERNAME` + `PM_PASSWORD` (takes precedence when both are set)
+
+For secrets with shell characters (for example `$`), prefer single quotes in `.env` values so `source .env` loads them literally.
+
+Also set `LXC_PASSWORD` and storage/SSH values as needed.
 2. Apply shared storage:
 
 ```bash

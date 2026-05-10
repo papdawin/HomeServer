@@ -7,16 +7,32 @@ include "lxc_common" {
   expose = true
 }
 
+locals {
+  openclaw_vmid = 127
+
+  openclaw_appdata_volume_ref = trimspace(get_env("OPENCLAW_APPDATA_VOLUME", include.lxc_common.locals.appdata_storage_path))
+  openclaw_appdata_mount = merge(
+    {
+      path   = "/appdata"
+      volume = local.openclaw_appdata_volume_ref
+    },
+    startswith(local.openclaw_appdata_volume_ref, "/") ? {} : { size = "256G" },
+  )
+}
+
 dependencies {
-  paths = ["../storage-bootstrap"]
+  paths = ["../../storage/appdata", "../storage-bootstrap"]
 }
 
 inputs = merge(include.lxc_common.inputs, {
-  vmid        = 127
+  vmid        = local.openclaw_vmid
   hostname    = "openclaw"
   ipv4_cidr   = "192.168.68.27/24"
   tags        = ["lxc", "nixos", "ai", "gateway"]
   rootfs_size = "128G"
   flake_file  = "${get_repo_root()}/nix/openclaw/flake.nix"
   flake_attr  = "openclaw"
+  mount_points = [
+    local.openclaw_appdata_mount,
+  ]
 })

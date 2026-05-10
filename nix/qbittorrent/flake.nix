@@ -37,8 +37,37 @@
             };
             users.users.qbittorrent.extraGroups = [ "media" ];
             services.qbittorrent.enable = true;
-            services.qbittorrent.profileDir = "/media/appdata/qbittorrent";
+            services.qbittorrent.profileDir = "/appdata/qbittorrent";
             systemd.services.qbittorrent.serviceConfig.UMask = "0002";
+            systemd.services.qbittorrent.wants = [ "qbittorrent-migrate-appdata.service" ];
+            systemd.services.qbittorrent.after = [ "qbittorrent-migrate-appdata.service" ];
+            systemd.services.qbittorrent-migrate-appdata = {
+              description = "Migrate legacy qBittorrent appdata from /media/appdata to /appdata";
+              before = [ "qbittorrent.service" ];
+              wantedBy = [ "multi-user.target" ];
+              path = with pkgs; [ coreutils findutils ];
+              serviceConfig = {
+                Type = "oneshot";
+              };
+              script = ''
+                set -eu
+
+                legacy_dir="/media/appdata/qbittorrent"
+                target_dir="/appdata/qbittorrent"
+
+                [ -d "$legacy_dir" ] || exit 0
+                [ -d "$target_dir" ] || mkdir -p "$target_dir"
+
+                if [ -n "$(find "$target_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
+                  echo "qbittorrent-migrate-appdata: target already populated, skipping migration"
+                  exit 0
+                fi
+
+                cp -a "$legacy_dir/." "$target_dir/"
+                chown -R qbittorrent:media "$target_dir" || true
+                echo "qbittorrent-migrate-appdata: migrated data from $legacy_dir to $target_dir"
+              '';
+            };
             environment.systemPackages = with pkgs; [ curl ];
 
             systemd.services.qbittorrent-credentials = {

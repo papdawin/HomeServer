@@ -22,13 +22,27 @@
                 }
               ];
 
-              systemd.tmpfiles.rules = [
-                "d /var/lib/nomad 0755 root root - -"
-                "d /appdata 0755 root root - -"
-                "d /appdata/nomad 0755 root root - -"
-                "d /appdata/nomad/data 0755 root root - -"
-                "d /appdata/nomad/uploads 0755 root root - -"
-              ];
+              # Ensure TREK can always write to persistent directories,
+              # regardless of the UID baked into upstream images.
+              systemd.services.nomad-appdata-permissions = {
+                description = "Prepare writable appdata directories for TREK";
+                before = [ "docker-nomad.service" ];
+                wantedBy = [ "multi-user.target" ];
+                serviceConfig = {
+                  Type = "oneshot";
+                  RemainAfterExit = true;
+                };
+                script = ''
+                  install -d -m 0775 /appdata/nomad /appdata/nomad/data /appdata/nomad/uploads
+                  chown -R 1000:1000 /appdata/nomad || true
+                  chmod -R u+rwX,g+rwX /appdata/nomad || true
+                '';
+              };
+
+              systemd.services.docker-nomad = {
+                wants = [ "nomad-appdata-permissions.service" ];
+                after = [ "nomad-appdata-permissions.service" ];
+              };
 
               users.mutableUsers = false;
               users.users.papdawin = {
@@ -55,7 +69,7 @@
 
               virtualisation.oci-containers.backend = "docker";
               virtualisation.oci-containers.containers.nomad = {
-                image = "docker.io/mauriceboe/trek:latest";
+                image = "docker.io/mauriceboe/trek:3.0.15";
                 autoStart = true;
                 environment = {
                   PORT = "3000";

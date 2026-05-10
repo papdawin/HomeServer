@@ -3,7 +3,7 @@ set -euo pipefail
 
 base_url="http://127.0.0.1:8989"
 api_url="$base_url/api/v3"
-config_xml="/media/appdata/sonarr/config.xml"
+config_xml="/appdata/sonarr/config.xml"
 
 log() { printf '[sonarr-bootstrap] %s\n' "$*" >&2; }
 

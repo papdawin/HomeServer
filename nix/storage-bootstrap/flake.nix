@@ -7,10 +7,7 @@
     nixosConfigurations.storagebootstrap = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
-        ({ pkgs, ... }:
-          let
-            doneFile = "/var/lib/storage-bootstrap/bootstrap-media-v1.done";
-          in {
+        ({ pkgs, ... }: {
             system.stateVersion = "25.11";
             boot.isContainer = true;
 
@@ -59,7 +56,6 @@
               description = "Bootstrap shared storage directory layout and ownership";
               wantedBy = [ "multi-user.target" ];
               path = with pkgs; [ util-linux ];
-              unitConfig.ConditionPathExists = "!${doneFile}";
               serviceConfig = {
                 Type = "oneshot";
               };
@@ -71,25 +67,45 @@
                   exit 1
                 }
 
-                install -d -m 2775 -o root -g media /media
-                install -d -m 2775 -o root -g media /media/movies
-                install -d -m 2775 -o root -g media /media/shows
-                install -d -m 2775 -o root -g media /media/other
-                install -d -m 2775 -o root -g media /media/music
-                install -d -m 2775 -o root -g media /media/downloads
-                install -d -m 2775 -o root -g media /media/downloads/radarr
-                install -d -m 2775 -o root -g media /media/downloads/sonarr
-                install -d -m 2775 -o root -g media /media/downloads/other
-                install -d -m 2775 -o root -g media /media/downloads/incomplete
-                install -d -m 2775 -o root -g media /media/appdata
-                install -d -m 2775 -o root -g media /media/appdata/qbittorrent
-                install -d -m 2775 -o root -g media /media/appdata/radarr
-                install -d -m 2775 -o root -g media /media/appdata/sonarr
-                install -d -m 2775 -o root -g media /media/appdata/prowlarr
-                install -d -m 2775 -o root -g media /media/appdata/jellyseerr
+                mountpoint -q /appdata || {
+                  echo "Expected /appdata to be a mounted Proxmox volume" >&2
+                  exit 1
+                }
 
-                install -d -m 0755 -o root -g root "$(dirname "${doneFile}")"
-                touch "${doneFile}"
+                # Unprivileged LXCs map container uid/gid 0 to host 100000 by
+                # default. Set shared bind-mount ownership accordingly so all
+                # unprivileged containers can write.
+                ensure_dir() {
+                  dir="$1"
+                  mode="$2"
+                  uid="$3"
+                  gid="$4"
+                  mkdir -p "$dir"
+                  chown "$uid:$gid" "$dir"
+                  chmod "$mode" "$dir"
+                }
+
+                ensure_dir /media 0777 100000 100000
+                ensure_dir /media/movies 0777 100000 100000
+                ensure_dir /media/shows 0777 100000 100000
+                ensure_dir /media/other 0777 100000 100000
+                ensure_dir /media/music 0777 100000 100000
+                ensure_dir /media/downloads 0777 100000 100000
+                ensure_dir /media/downloads/radarr 0777 100000 100000
+                ensure_dir /media/downloads/sonarr 0777 100000 100000
+                ensure_dir /media/downloads/other 0777 100000 100000
+                ensure_dir /media/downloads/incomplete 0777 100000 100000
+
+                ensure_dir /appdata 0777 100000 100000
+                ensure_dir /appdata/jellyfin 0777 100000 100000
+                ensure_dir /appdata/jellyseerr 0777 100000 100000
+                ensure_dir /appdata/prowlarr 0777 100000 100000
+                ensure_dir /appdata/qbittorrent 0777 100000 100000
+                ensure_dir /appdata/radarr 0777 100000 100000
+                ensure_dir /appdata/sonarr 0777 100000 100000
+                ensure_dir /appdata/immich 0777 100000 100000
+                ensure_dir /appdata/openclaw 0777 100000 100000
+                ensure_dir /appdata/nomad 0777 100000 100000
               '';
             };
 

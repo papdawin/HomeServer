@@ -3,9 +3,11 @@ set -euo pipefail
 
 base_url="http://127.0.0.1:9696"
 api_url="$base_url/api/v1"
-prowlarr_config_xml="/media/appdata/prowlarr/config.xml"
-radarr_config_xml="/media/appdata/radarr/config.xml"
-sonarr_config_xml="/media/appdata/sonarr/config.xml"
+prowlarr_config_xml="/appdata/prowlarr/config.xml"
+radarr_config_xml="/appdata/radarr/config.xml"
+sonarr_config_xml="/appdata/sonarr/config.xml"
+radarr_legacy_config_xml="/media/appdata/radarr/config.xml"
+sonarr_legacy_config_xml="/media/appdata/sonarr/config.xml"
 prowlarr_url="http://192.168.68.31:9696"
 radarr_host="192.168.68.29"
 radarr_port="7878"
@@ -30,6 +32,25 @@ wait_for_file_value() {
         return 0
       fi
     fi
+    i="$((i + 1))"
+    sleep 2
+  done
+  return 1
+}
+
+wait_for_file_value_candidates() {
+  local tag="$1" value="" file
+  shift
+  local i=0
+  while [ "$i" -lt 180 ]; do
+    for file in "$@"; do
+      [ -f "$file" ] || continue
+      value="$(xml_value "$file" "$tag" || true)"
+      if [ -n "$value" ]; then
+        printf '%s' "$value"
+        return 0
+      fi
+    done
     i="$((i + 1))"
     sleep 2
   done
@@ -380,10 +401,12 @@ sonarr_port="${PROWLARR_SONARR_PORT:-$sonarr_port}"
 prowlarr_api_key="$(wait_for_file_value "$prowlarr_config_xml" "ApiKey" || true)"
 [ -n "$prowlarr_api_key" ] || { log "Prowlarr API key not found in $prowlarr_config_xml"; exit 1; }
 
-radarr_api_key="$(wait_for_file_value "$radarr_config_xml" "ApiKey" || true)"
-sonarr_api_key="$(wait_for_file_value "$sonarr_config_xml" "ApiKey" || true)"
-[ -n "$radarr_api_key" ] || { log "Radarr API key not found in $radarr_config_xml"; exit 1; }
-[ -n "$sonarr_api_key" ] || { log "Sonarr API key not found in $sonarr_config_xml"; exit 1; }
+radarr_api_key="${PROWLARR_RADARR_API_KEY:-}"
+sonarr_api_key="${PROWLARR_SONARR_API_KEY:-}"
+[ -n "$radarr_api_key" ] || radarr_api_key="$(wait_for_file_value_candidates "ApiKey" "$radarr_config_xml" "$radarr_legacy_config_xml" || true)"
+[ -n "$sonarr_api_key" ] || sonarr_api_key="$(wait_for_file_value_candidates "ApiKey" "$sonarr_config_xml" "$sonarr_legacy_config_xml" || true)"
+[ -n "$radarr_api_key" ] || { log "Radarr API key missing; set PROWLARR_RADARR_API_KEY (fallback paths: $radarr_config_xml, $radarr_legacy_config_xml)"; exit 1; }
+[ -n "$sonarr_api_key" ] || { log "Sonarr API key missing; set PROWLARR_SONARR_API_KEY (fallback paths: $sonarr_config_xml, $sonarr_legacy_config_xml)"; exit 1; }
 
 wait_api_ready || { log "Prowlarr API did not become ready in time"; exit 1; }
 application_collection_endpoint="$(resolve_application_collection_endpoint)" || { log "Failed to resolve Prowlarr application endpoint"; exit 1; }

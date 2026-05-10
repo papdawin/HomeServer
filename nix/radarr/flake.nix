@@ -42,7 +42,7 @@
 
               services.radarr = {
                 enable = true;
-                dataDir = "/media/appdata/radarr";
+                dataDir = "/appdata/radarr";
                 user = "radarr";
                 group = "media";
                 settings.server = {
@@ -51,6 +51,35 @@
                 };
               };
               systemd.services.radarr.serviceConfig.UMask = "0002";
+              systemd.services.radarr.wants = [ "radarr-migrate-appdata.service" ];
+              systemd.services.radarr.after = [ "radarr-migrate-appdata.service" ];
+              systemd.services.radarr-migrate-appdata = {
+                description = "Migrate legacy Radarr appdata from /media/appdata to /appdata";
+                before = [ "radarr.service" ];
+                wantedBy = [ "multi-user.target" ];
+                path = with pkgs; [ coreutils findutils ];
+                serviceConfig = {
+                  Type = "oneshot";
+                };
+                script = ''
+                  set -eu
+
+                  legacy_dir="/media/appdata/radarr"
+                  target_dir="/appdata/radarr"
+
+                  [ -d "$legacy_dir" ] || exit 0
+                  [ -d "$target_dir" ] || mkdir -p "$target_dir"
+
+                  if [ -n "$(find "$target_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
+                    echo "radarr-migrate-appdata: target already populated, skipping migration"
+                    exit 0
+                  fi
+
+                  cp -a "$legacy_dir/." "$target_dir/"
+                  chown -R radarr:media "$target_dir" || true
+                  echo "radarr-migrate-appdata: migrated data from $legacy_dir to $target_dir"
+                '';
+              };
 
               environment.systemPackages = with pkgs; [ curl jq ];
 
