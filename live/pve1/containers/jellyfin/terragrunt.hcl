@@ -33,6 +33,7 @@ inputs = merge(include.lxc_common.inputs, {
   flake_attr = "jellyfin"
   post_rebuild_commands = [
     <<-EOT
+      set -euo pipefail
       systemctl restart jellyfin-credentials.service
       systemctl restart jellyfin-bootstrap.service
       systemctl restart jellyfin-bootstrap-libraries.service
@@ -40,6 +41,8 @@ inputs = merge(include.lxc_common.inputs, {
       journalctl -u jellyfin-credentials.service -u jellyfin-bootstrap.service -u jellyfin-bootstrap-libraries.service -n 200 --no-pager || true
     EOT
   ]
+  post_rebuild_command_timeout_seconds = 1200
+  post_rebuild_continue_on_error       = false
   mount_points = [
     local.jellyfin_appdata_mount,
     {

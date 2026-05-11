@@ -11,6 +11,8 @@ radarr_legacy_config_xml="/media/appdata/radarr/config.xml"
 sonarr_legacy_config_xml="/media/appdata/sonarr/config.xml"
 radarr_host="192.168.68.29"
 sonarr_host="192.168.68.30"
+radarr_active_directory="/media/downloads/radarr"
+sonarr_active_directory="/media/downloads/sonarr"
 cookie_file=""
 
 log() { printf '[jellyseerr-bootstrap] %s\n' "$*" >&2; }
@@ -195,7 +197,7 @@ upsert_radarr() {
     --arg host "$radarr_host" \
     --arg apiKey "$radarr_api_key" \
     --arg profileName "$profile_name" \
-    --arg activeDirectory "/media/movies" \
+    --arg activeDirectory "$radarr_active_directory" \
     --arg minimumAvailability "$min_avail" \
     --argjson activeProfileId "$profile_id" \
     '{
@@ -240,7 +242,7 @@ upsert_sonarr() {
     --arg host "$sonarr_host" \
     --arg apiKey "$sonarr_api_key" \
     --arg profileName "$profile_name" \
-    --arg activeDirectory "/media/shows" \
+    --arg activeDirectory "$sonarr_active_directory" \
     --argjson activeProfileId "$profile_id" \
     --argjson activeLanguageProfileId "$language_profile_id" \
     '{
@@ -275,12 +277,13 @@ upsert_sonarr() {
 
 is_radarr_configured() {
   local count
-  count="$(api_call GET "settings/radarr" | jq -r --arg host "$radarr_host" '
+  count="$(api_call GET "settings/radarr" | jq -r --arg host "$radarr_host" --arg activeDirectory "$radarr_active_directory" '
     [
       .[]
       | select((.is4k // false) == false)
       | select((.hostname // "") == $host)
       | select((.port // 0) == 7878)
+      | select((.activeDirectory // "" | rtrimstr("/")) == ($activeDirectory | rtrimstr("/")))
     ] | length
   ')"
   [ "$count" -ge 1 ] 2>/dev/null
@@ -288,12 +291,13 @@ is_radarr_configured() {
 
 is_sonarr_configured() {
   local count
-  count="$(api_call GET "settings/sonarr" | jq -r --arg host "$sonarr_host" '
+  count="$(api_call GET "settings/sonarr" | jq -r --arg host "$sonarr_host" --arg activeDirectory "$sonarr_active_directory" '
     [
       .[]
       | select((.is4k // false) == false)
       | select((.hostname // "") == $host)
       | select((.port // 0) == 8989)
+      | select((.activeDirectory // "" | rtrimstr("/")) == ($activeDirectory | rtrimstr("/")))
     ] | length
   ')"
   [ "$count" -ge 1 ] 2>/dev/null

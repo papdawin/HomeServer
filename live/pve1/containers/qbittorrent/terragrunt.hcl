@@ -33,6 +33,7 @@ inputs = merge(include.lxc_common.inputs, {
   flake_attr = "qbittorrent"
   post_rebuild_commands = [
     <<-EOT
+      set -euo pipefail
       printf '%s' '${base64encode(file("${get_repo_root()}/nix/qbittorrent/qbittorrent-bootstrap-user.sh"))}' | base64 -d >/tmp/qbittorrent-bootstrap-user.sh
       chmod 700 /tmp/qbittorrent-bootstrap-user.sh
       /tmp/qbittorrent-bootstrap-user.sh
@@ -43,6 +44,8 @@ inputs = merge(include.lxc_common.inputs, {
       rm -f /tmp/qbittorrent-bootstrap-routing.sh
     EOT
   ]
+  post_rebuild_command_timeout_seconds = 1200
+  post_rebuild_continue_on_error       = false
   mount_points = [
     local.qbittorrent_appdata_mount,
     {
