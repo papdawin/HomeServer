@@ -44,6 +44,7 @@ _Proxmox UI screencapture showing the resources and containers provisioned by Te
 | `sonarr` | 130 | 192.168.68.30 | TV automation and library management. |
 | `prowlarr` | 131 | 192.168.68.31 | Indexer management + sync to Radarr/Sonarr. |
 | `jellyseerr` | 132 | 192.168.68.32 | User request portal integrated with Jellyfin and *arr apps. |
+| `nextcloud` | 134 | 192.168.68.34 | Personal cloud/file sync service with full shared media mount access. |
 
 ![Container diagram](https://github.com/papdawin/HomeServer/blob/main/pictures/container-diagram.png?raw=true)
 
