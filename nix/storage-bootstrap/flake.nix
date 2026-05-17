@@ -51,6 +51,10 @@
               isSystemUser = true;
               group = "media";
             };
+            users.users.bazarr = {
+              isSystemUser = true;
+              group = "media";
+            };
 
             systemd.services."storage-bootstrap" = {
               description = "Bootstrap shared storage directory layout and ownership";
@@ -103,6 +107,7 @@
                 ensure_dir /appdata/qbittorrent 0777 100000 100000
                 ensure_dir /appdata/radarr 0777 100000 100000
                 ensure_dir /appdata/sonarr 0777 100000 100000
+                ensure_dir /appdata/bazarr 0777 100000 100000
                 ensure_dir /appdata/immich 0777 100000 100000
                 ensure_dir /appdata/openclaw 0777 100000 100000
                 ensure_dir /appdata/nomad 0777 100000 100000
