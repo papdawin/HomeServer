@@ -33,9 +33,9 @@
                   RemainAfterExit = true;
                 };
                 script = ''
-                  install -d -m 0775 /appdata/nomad /appdata/nomad/data /appdata/nomad/uploads
-                  chown -R 1000:1000 /appdata/nomad || true
-                  chmod -R u+rwX,g+rwX /appdata/nomad || true
+                  install -d -m 0775 /appdata /appdata/data /appdata/uploads
+                  chown -R 1000:1000 /appdata || true
+                  chmod -R u+rwX,g+rwX /appdata || true
                 '';
               };
 
@@ -82,8 +82,8 @@
                 };
                 ports = [ "3000:3000" ];
                 volumes = [
-                  "/appdata/nomad/data:/app/data"
-                  "/appdata/nomad/uploads:/app/uploads"
+                  "/appdata/data:/app/data"
+                  "/appdata/uploads:/app/uploads"
                 ];
               };
 

@@ -10,14 +10,13 @@ include "lxc_common" {
 locals {
   nomad_vmid = 133
 
-  nomad_appdata_volume_ref = trimspace(get_env("NOMAD_APPDATA_VOLUME", include.lxc_common.locals.appdata_storage_path))
-  nomad_appdata_mount = merge(
-    {
-      path   = "/appdata"
-      volume = local.nomad_appdata_volume_ref
-    },
-    startswith(local.nomad_appdata_volume_ref, "/") ? {} : { size = "32G" },
-  )
+  # Strict appdata separation:
+  # mount only Nomad's dedicated appdata subtree into the container.
+  nomad_appdata_volume_ref = "${include.lxc_common.locals.appdata_storage_path}/nomad"
+  nomad_appdata_mount = {
+    path   = "/appdata"
+    volume = local.nomad_appdata_volume_ref
+  }
 }
 
 terraform {

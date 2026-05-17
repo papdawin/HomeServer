@@ -10,14 +10,11 @@ include "lxc_common" {
 locals {
   nextcloud_vmid = 134
 
-  nextcloud_appdata_volume_ref = trimspace(get_env("NEXTCLOUD_APPDATA_VOLUME", include.lxc_common.locals.appdata_storage_path))
-  nextcloud_appdata_mount = merge(
-    {
-      path   = "/appdata"
-      volume = local.nextcloud_appdata_volume_ref
-    },
-    startswith(local.nextcloud_appdata_volume_ref, "/") ? {} : { size = "256G" },
-  )
+  nextcloud_appdata_volume_ref = "${include.lxc_common.locals.appdata_storage_path}/nextcloud"
+  nextcloud_appdata_mount = {
+    path   = "/appdata"
+    volume = local.nextcloud_appdata_volume_ref
+  }
 }
 
 dependencies {

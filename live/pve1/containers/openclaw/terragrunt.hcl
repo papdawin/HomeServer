@@ -10,14 +10,11 @@ include "lxc_common" {
 locals {
   openclaw_vmid = 127
 
-  openclaw_appdata_volume_ref = trimspace(get_env("OPENCLAW_APPDATA_VOLUME", include.lxc_common.locals.appdata_storage_path))
-  openclaw_appdata_mount = merge(
-    {
-      path   = "/appdata"
-      volume = local.openclaw_appdata_volume_ref
-    },
-    startswith(local.openclaw_appdata_volume_ref, "/") ? {} : { size = "256G" },
-  )
+  openclaw_appdata_volume_ref = "${include.lxc_common.locals.appdata_storage_path}/openclaw"
+  openclaw_appdata_mount = {
+    path   = "/appdata"
+    volume = local.openclaw_appdata_volume_ref
+  }
 }
 
 dependencies {

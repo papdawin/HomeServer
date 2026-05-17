@@ -43,42 +43,10 @@
 
             services.jellyfin = {
               enable = true;
-              dataDir = "/appdata/jellyfin";
-              configDir = "/appdata/jellyfin/config";
-              logDir = "/appdata/jellyfin/log";
-              cacheDir = "/appdata/jellyfin/cache";
-            };
-            systemd.services.jellyfin.wants = [ "jellyfin-migrate-appdata.service" ];
-            systemd.services.jellyfin.after = [ "jellyfin-migrate-appdata.service" ];
-            systemd.services.jellyfin-migrate-appdata = {
-              description = "Migrate legacy Jellyfin state from rootfs to /appdata";
-              before = [ "jellyfin.service" ];
-              wantedBy = [ "multi-user.target" ];
-              path = with pkgs; [ coreutils findutils ];
-              serviceConfig = {
-                Type = "oneshot";
-              };
-              script = ''
-                set -eu
-
-                target_data_dir="/appdata/jellyfin"
-                target_cache_dir="/appdata/jellyfin/cache"
-                legacy_data_dir="/var/lib/jellyfin"
-                legacy_cache_dir="/var/cache/jellyfin"
-
-                mkdir -p "$target_data_dir" "$target_cache_dir"
-
-                if [ -d "$legacy_data_dir" ] && [ -z "$(find "$target_data_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
-                  cp -a "$legacy_data_dir/." "$target_data_dir/"
-                fi
-
-                if [ -d "$legacy_cache_dir" ] && [ -z "$(find "$target_cache_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
-                  cp -a "$legacy_cache_dir/." "$target_cache_dir/"
-                fi
-
-                chown -R jellyfin:jellyfin "/appdata/jellyfin" || true
-                echo "jellyfin-migrate-appdata: migration step completed"
-              '';
+              dataDir = "/appdata";
+              configDir = "/appdata/config";
+              logDir = "/appdata/log";
+              cacheDir = "/appdata/cache";
             };
             environment.systemPackages = with pkgs; [ curl ];
 

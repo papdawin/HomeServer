@@ -10,14 +10,11 @@ include "lxc_common" {
 locals {
   jellyseerr_vmid = 132
 
-  jellyseerr_appdata_volume_ref = trimspace(get_env("JELLYSEERR_APPDATA_VOLUME", include.lxc_common.locals.appdata_storage_path))
-  jellyseerr_appdata_mount = merge(
-    {
-      path   = "/appdata"
-      volume = local.jellyseerr_appdata_volume_ref
-    },
-    startswith(local.jellyseerr_appdata_volume_ref, "/") ? {} : { size = "256G" },
-  )
+  jellyseerr_appdata_volume_ref = "${include.lxc_common.locals.appdata_storage_path}/jellyseerr"
+  jellyseerr_appdata_mount = {
+    path   = "/appdata"
+    volume = local.jellyseerr_appdata_volume_ref
+  }
 }
 
 dependencies {

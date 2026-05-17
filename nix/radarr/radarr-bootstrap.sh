@@ -3,7 +3,7 @@ set -euo pipefail
 
 base_url="http://127.0.0.1:7878"
 api_url="$base_url/api/v3"
-config_xml="/appdata/radarr/config.xml"
+config_xml="/appdata/config.xml"
 
 log() { printf '[radarr-bootstrap] %s\n' "$*" >&2; }
 
@@ -205,6 +205,28 @@ enable_completed_download_handling() {
   api_call PUT "config/downloadClient" "$updated" >/dev/null || true
 }
 
+synchronize_api_key() {
+  local desired_api_key escaped
+  desired_api_key="${RADARR_API_KEY:-}"
+  [ -n "$desired_api_key" ] || return 0
+
+  if [ "$radarr_api_key" = "$desired_api_key" ]; then
+    return 0
+  fi
+
+  escaped="$(printf '%s' "$desired_api_key" | sed 's/[&|]/\\&/g')"
+  if ! grep -q "<ApiKey>" "$config_xml"; then
+    log "Cannot synchronize Radarr API key: <ApiKey> tag missing in $config_xml"
+    return 1
+  fi
+
+  sed -i "s|<ApiKey>[^<]*</ApiKey>|<ApiKey>${escaped}</ApiKey>|g" "$config_xml"
+  systemctl restart radarr.service
+  radarr_api_key="$desired_api_key"
+  wait_api_ready || { log "Radarr API did not become ready after API key synchronization"; return 1; }
+  log "Synchronized Radarr API key with shared secret"
+}
+
 if ! systemctl start radarr-credentials.service; then
   log "radarr-credentials.service start failed; using existing /run/radarr-bootstrap.env if present"
 fi
@@ -224,6 +246,7 @@ radarr_api_key="$(wait_for_file_value "$config_xml" "ApiKey" || true)"
 [ -n "$radarr_api_key" ] || { log "Radarr API key not found in $config_xml"; exit 1; }
 
 wait_api_ready || { log "Radarr API did not become ready in time"; exit 1; }
+synchronize_api_key
 wait_qbt_ready || { log "qBittorrent did not become ready in time"; exit 1; }
 qbt_login || { log "Failed to authenticate to qBittorrent"; exit 1; }
 ensure_qbit_category_path "radarr" "/media/downloads/radarr" || log "Warning: could not set qBittorrent category path for radarr; continuing"

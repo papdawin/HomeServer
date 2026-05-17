@@ -10,14 +10,11 @@ include "lxc_common" {
 locals {
   bazarr_vmid = 135
 
-  bazarr_appdata_volume_ref = trimspace(get_env("BAZARR_APPDATA_VOLUME", include.lxc_common.locals.appdata_storage_path))
-  bazarr_appdata_mount = merge(
-    {
-      path   = "/appdata"
-      volume = local.bazarr_appdata_volume_ref
-    },
-    startswith(local.bazarr_appdata_volume_ref, "/") ? {} : { size = "256G" },
-  )
+  bazarr_appdata_volume_ref = "${include.lxc_common.locals.appdata_storage_path}/bazarr"
+  bazarr_appdata_mount = {
+    path   = "/appdata"
+    volume = local.bazarr_appdata_volume_ref
+  }
 }
 
 dependencies {

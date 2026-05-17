@@ -5,10 +5,6 @@ set -euo pipefail
 # Prowlarr is wired to Radarr/Sonarr (not directly to Jellyseerr).
 
 base_url="http://127.0.0.1:5055/api/v1"
-radarr_config_xml="/appdata/radarr/config.xml"
-sonarr_config_xml="/appdata/sonarr/config.xml"
-radarr_legacy_config_xml="/media/appdata/radarr/config.xml"
-sonarr_legacy_config_xml="/media/appdata/sonarr/config.xml"
 radarr_host="192.168.68.29"
 sonarr_host="192.168.68.30"
 radarr_active_directory="/media/downloads/radarr"
@@ -99,25 +95,6 @@ wait_for_file_value() {
         return 0
       fi
     fi
-    i="$((i + 1))"
-    sleep 2
-  done
-  return 1
-}
-
-wait_for_file_value_candidates() {
-  local tag="$1" value="" file
-  shift
-  local i=0
-  while [ "$i" -lt 180 ]; do
-    for file in "$@"; do
-      [ -f "$file" ] || continue
-      value="$(xml_value "$file" "$tag" || true)"
-      if [ -n "$value" ]; then
-        printf '%s' "$value"
-        return 0
-      fi
-    done
     i="$((i + 1))"
     sleep 2
   done
@@ -541,11 +518,8 @@ wait_ready || { log "Jellyseerr did not become ready in time"; exit 1; }
 
 radarr_api_key="${JELLYSEERR_RADARR_API_KEY:-}"
 sonarr_api_key="${JELLYSEERR_SONARR_API_KEY:-}"
-[ -n "$radarr_api_key" ] || radarr_api_key="$(wait_for_file_value_candidates "ApiKey" "$radarr_config_xml" "$radarr_legacy_config_xml" || true)"
-[ -n "$sonarr_api_key" ] || sonarr_api_key="$(wait_for_file_value_candidates "ApiKey" "$sonarr_config_xml" "$sonarr_legacy_config_xml" || true)"
-
-[ -n "$radarr_api_key" ] || { log "Radarr API key missing; set JELLYSEERR_RADARR_API_KEY (fallback paths: $radarr_config_xml, $radarr_legacy_config_xml)"; exit 1; }
-[ -n "$sonarr_api_key" ] || { log "Sonarr API key missing; set JELLYSEERR_SONARR_API_KEY (fallback paths: $sonarr_config_xml, $sonarr_legacy_config_xml)"; exit 1; }
+[ -n "$radarr_api_key" ] || { log "Radarr API key missing; set JELLYSEERR_RADARR_API_KEY"; exit 1; }
+[ -n "$sonarr_api_key" ] || { log "Sonarr API key missing; set JELLYSEERR_SONARR_API_KEY"; exit 1; }
 
 wait_arr "$radarr_host" 7878 "$radarr_api_key" || { log "Radarr did not become ready in time"; exit 1; }
 wait_arr "$sonarr_host" 8989 "$sonarr_api_key" || { log "Sonarr did not become ready in time"; exit 1; }

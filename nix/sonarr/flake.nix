@@ -42,7 +42,7 @@
 
               services.sonarr = {
                 enable = true;
-                dataDir = "/appdata/sonarr";
+                dataDir = "/appdata";
                 user = "sonarr";
                 group = "media";
                 settings.server = {
@@ -51,35 +51,6 @@
                 };
               };
               systemd.services.sonarr.serviceConfig.UMask = "0002";
-              systemd.services.sonarr.wants = [ "sonarr-migrate-appdata.service" ];
-              systemd.services.sonarr.after = [ "sonarr-migrate-appdata.service" ];
-              systemd.services.sonarr-migrate-appdata = {
-                description = "Migrate legacy Sonarr appdata from /media/appdata to /appdata";
-                before = [ "sonarr.service" ];
-                wantedBy = [ "multi-user.target" ];
-                path = with pkgs; [ coreutils findutils ];
-                serviceConfig = {
-                  Type = "oneshot";
-                };
-                script = ''
-                  set -eu
-
-                  legacy_dir="/media/appdata/sonarr"
-                  target_dir="/appdata/sonarr"
-
-                  [ -d "$legacy_dir" ] || exit 0
-                  [ -d "$target_dir" ] || mkdir -p "$target_dir"
-
-                  if [ -n "$(find "$target_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
-                    echo "sonarr-migrate-appdata: target already populated, skipping migration"
-                    exit 0
-                  fi
-
-                  cp -a "$legacy_dir/." "$target_dir/"
-                  chown -R sonarr:media "$target_dir" || true
-                  echo "sonarr-migrate-appdata: migrated data from $legacy_dir to $target_dir"
-                '';
-              };
 
               environment.systemPackages = with pkgs; [ curl jq ];
 
@@ -100,12 +71,14 @@
                   qbt_username="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["mediaautomation"]["qbittorrent"]["username"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
                   qbt_password="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["mediaautomation"]["qbittorrent"]["password"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
                   password="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["sonarr"]["password"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
+                  api_key="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["mediaautomation"]["sonarr"]["apiKey"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
 
                   cat > /run/sonarr-bootstrap.env <<EOF_INNER
                   SONARR_QBITTORRENT_HOST=${qbittorrentHost}
                   SONARR_QBITTORRENT_PORT=${toString qbittorrentPort}
                   SONARR_QBITTORRENT_USERNAME=$qbt_username
                   SONARR_QBITTORRENT_PASSWORD=$qbt_password
+                  SONARR_API_KEY=$api_key
                   SONARR_BOOTSTRAP_USERNAME=${sonarrBootstrapUsername}
                   SONARR_BOOTSTRAP_PASSWORD=$password
                   EOF_INNER

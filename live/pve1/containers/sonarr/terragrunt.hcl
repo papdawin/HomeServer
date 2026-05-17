@@ -10,14 +10,11 @@ include "lxc_common" {
 locals {
   sonarr_vmid = 130
 
-  sonarr_appdata_volume_ref = trimspace(get_env("SONARR_APPDATA_VOLUME", include.lxc_common.locals.appdata_storage_path))
-  sonarr_appdata_mount = merge(
-    {
-      path   = "/appdata"
-      volume = local.sonarr_appdata_volume_ref
-    },
-    startswith(local.sonarr_appdata_volume_ref, "/") ? {} : { size = "256G" },
-  )
+  sonarr_appdata_volume_ref = "${include.lxc_common.locals.appdata_storage_path}/sonarr"
+  sonarr_appdata_mount = {
+    path   = "/appdata"
+    volume = local.sonarr_appdata_volume_ref
+  }
 }
 
 dependencies {

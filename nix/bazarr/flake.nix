@@ -40,41 +40,12 @@
 
               services.bazarr = {
                 enable = true;
-                dataDir = "/appdata/bazarr";
+                dataDir = "/appdata";
                 user = "bazarr";
                 group = "media";
                 listenPort = 6767;
               };
               systemd.services.bazarr.serviceConfig.UMask = "0002";
-              systemd.services.bazarr.wants = [ "bazarr-migrate-appdata.service" ];
-              systemd.services.bazarr.after = [ "bazarr-migrate-appdata.service" ];
-              systemd.services.bazarr-migrate-appdata = {
-                description = "Migrate legacy Bazarr appdata from /media/appdata to /appdata";
-                before = [ "bazarr.service" ];
-                wantedBy = [ "multi-user.target" ];
-                path = with pkgs; [ coreutils findutils ];
-                serviceConfig = {
-                  Type = "oneshot";
-                };
-                script = ''
-                  set -eu
-
-                  legacy_dir="/media/appdata/bazarr"
-                  target_dir="/appdata/bazarr"
-
-                  [ -d "$legacy_dir" ] || exit 0
-                  [ -d "$target_dir" ] || mkdir -p "$target_dir"
-
-                  if [ -n "$(find "$target_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
-                    echo "bazarr-migrate-appdata: target already populated, skipping migration"
-                    exit 0
-                  fi
-
-                  cp -a "$legacy_dir/." "$target_dir/"
-                  chown -R bazarr:media "$target_dir" || true
-                  echo "bazarr-migrate-appdata: migrated data from $legacy_dir to $target_dir"
-                '';
-              };
 
               environment.systemPackages = with pkgs; [ curl jq ];
 

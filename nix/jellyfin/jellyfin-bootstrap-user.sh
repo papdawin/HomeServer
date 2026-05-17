@@ -63,7 +63,9 @@ dump_systemd_state
 dump_file_state
 
 log "Starting jellyfin-credentials.service"
-systemctl start jellyfin-credentials.service
+if ! systemctl start jellyfin-credentials.service; then
+  log "jellyfin-credentials.service start failed; using existing /run/jellyfin-bootstrap.env if present"
+fi
 
 if [ ! -s /run/jellyfin-bootstrap.env ]; then
   log "Missing or empty /run/jellyfin-bootstrap.env"

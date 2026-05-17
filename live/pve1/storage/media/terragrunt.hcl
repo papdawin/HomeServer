@@ -6,10 +6,13 @@ locals {
   pve                = read_terragrunt_config(find_in_parent_folders("pve.hcl"))
   media_storage_id   = trimspace(get_env("MEDIA_STORAGE_ID", "media"))
   media_storage_path = trimspace(get_env("MEDIA_STORAGE_PATH", "/mnt/pve/HDD/media"))
+  # Safety default: false. Set MEDIA_ALLOW_DESTROY=true (or ALLOW_STORAGE_DESTROY=true)
+  # only when you intentionally want to delete this Proxmox storage definition.
+  media_allow_destroy = lower(trimspace(get_env("MEDIA_ALLOW_DESTROY", get_env("ALLOW_STORAGE_DESTROY", "false")))) == "true"
 }
 
 terraform {
-  source = "${get_repo_root()}/modules/storage-directory"
+  source = local.media_allow_destroy ? "${get_repo_root()}/modules/storage-directory-destroyable" : "${get_repo_root()}/modules/storage-directory"
 }
 
 inputs = {

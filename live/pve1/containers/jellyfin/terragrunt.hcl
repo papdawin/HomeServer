@@ -10,14 +10,11 @@ include "lxc_common" {
 locals {
   jellyfin_vmid = 125
 
-  jellyfin_appdata_volume_ref = trimspace(get_env("JELLYFIN_APPDATA_VOLUME", include.lxc_common.locals.appdata_storage_path))
-  jellyfin_appdata_mount = merge(
-    {
-      path   = "/appdata"
-      volume = local.jellyfin_appdata_volume_ref
-    },
-    startswith(local.jellyfin_appdata_volume_ref, "/") ? {} : { size = "256G" },
-  )
+  jellyfin_appdata_volume_ref = "${include.lxc_common.locals.appdata_storage_path}/jellyfin"
+  jellyfin_appdata_mount = {
+    path   = "/appdata"
+    volume = local.jellyfin_appdata_volume_ref
+  }
 }
 
 dependencies {
@@ -34,9 +31,12 @@ inputs = merge(include.lxc_common.inputs, {
   post_rebuild_commands = [
     <<-EOT
       set -euo pipefail
-      systemctl restart jellyfin-credentials.service
-      systemctl restart jellyfin-bootstrap.service
-      systemctl restart jellyfin-bootstrap-libraries.service
+      # These oneshot units already run during activation via wantedBy=multi-user.target.
+      # Avoid rapid restart loops that can trip start-limit-hit on jellyfin-credentials.
+      systemctl reset-failed jellyfin-credentials.service jellyfin-bootstrap.service jellyfin-bootstrap-libraries.service || true
+      systemctl start jellyfin-credentials.service
+      systemctl start jellyfin-bootstrap.service
+      systemctl start jellyfin-bootstrap-libraries.service
       systemctl --no-pager --full status jellyfin-credentials.service jellyfin-bootstrap.service jellyfin-bootstrap-libraries.service || true
       journalctl -u jellyfin-credentials.service -u jellyfin-bootstrap.service -u jellyfin-bootstrap-libraries.service -n 200 --no-pager || true
     EOT

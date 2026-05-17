@@ -3,7 +3,7 @@ set -euo pipefail
 
 base_url="http://127.0.0.1:6767"
 api_url="$base_url/api"
-bazarr_config_yaml="/appdata/bazarr/config/config.yaml"
+bazarr_config_yaml="/appdata/config/config.yaml"
 
 log() { printf '[bazarr-bootstrap-user] %s\n' "$*" >&2; }
 

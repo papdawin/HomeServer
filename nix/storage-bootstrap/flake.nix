@@ -77,8 +77,11 @@
                 }
 
                 # Unprivileged LXCs map container uid/gid 0 to host 100000 by
-                # default. Set shared bind-mount ownership accordingly so all
-                # unprivileged containers can write.
+                # default. Shared group gid 2000 ("media") maps to host 102000.
+                host_root_uid=100000
+                host_root_gid=100000
+                host_media_gid=102000
+
                 ensure_dir() {
                   dir="$1"
                   mode="$2"
@@ -89,28 +92,33 @@
                   chmod "$mode" "$dir"
                 }
 
-                ensure_dir /media 0777 100000 100000
-                ensure_dir /media/movies 0777 100000 100000
-                ensure_dir /media/shows 0777 100000 100000
-                ensure_dir /media/other 0777 100000 100000
-                ensure_dir /media/music 0777 100000 100000
-                ensure_dir /media/downloads 0777 100000 100000
-                ensure_dir /media/downloads/radarr 0777 100000 100000
-                ensure_dir /media/downloads/sonarr 0777 100000 100000
-                ensure_dir /media/downloads/other 0777 100000 100000
-                ensure_dir /media/downloads/incomplete 0777 100000 100000
+                # Shared media paths remain writable across media services.
+                ensure_dir /media 2775 "$host_root_uid" "$host_media_gid"
+                ensure_dir /media/movies 2775 "$host_root_uid" "$host_media_gid"
+                ensure_dir /media/shows 2775 "$host_root_uid" "$host_media_gid"
+                ensure_dir /media/downloads 2775 "$host_root_uid" "$host_media_gid"
+                ensure_dir /media/downloads/radarr 2775 "$host_root_uid" "$host_media_gid"
+                ensure_dir /media/downloads/sonarr 2775 "$host_root_uid" "$host_media_gid"
+                ensure_dir /media/downloads/other 2775 "$host_root_uid" "$host_media_gid"
+                ensure_dir /media/downloads/incomplete 2775 "$host_root_uid" "$host_media_gid"
 
-                ensure_dir /appdata 0777 100000 100000
-                ensure_dir /appdata/jellyfin 0777 100000 100000
-                ensure_dir /appdata/jellyseerr 0777 100000 100000
-                ensure_dir /appdata/prowlarr 0777 100000 100000
-                ensure_dir /appdata/qbittorrent 0777 100000 100000
-                ensure_dir /appdata/radarr 0777 100000 100000
-                ensure_dir /appdata/sonarr 0777 100000 100000
-                ensure_dir /appdata/bazarr 0777 100000 100000
-                ensure_dir /appdata/immich 0777 100000 100000
-                ensure_dir /appdata/openclaw 0777 100000 100000
-                ensure_dir /appdata/nomad 0777 100000 100000
+                # Appdata roots should not be world-writable.
+                ensure_dir /appdata 0755 "$host_root_uid" "$host_root_gid"
+
+                # Services that run in media group (gid 2000 in containers).
+                ensure_dir /appdata/jellyfin 2770 "$host_root_uid" "$host_media_gid"
+                ensure_dir /appdata/jellyseerr 2770 "$host_root_uid" "$host_media_gid"
+                ensure_dir /appdata/prowlarr 2770 "$host_root_uid" "$host_media_gid"
+                ensure_dir /appdata/qbittorrent 2770 "$host_root_uid" "$host_media_gid"
+                ensure_dir /appdata/radarr 2770 "$host_root_uid" "$host_media_gid"
+                ensure_dir /appdata/sonarr 2770 "$host_root_uid" "$host_media_gid"
+                ensure_dir /appdata/bazarr 2770 "$host_root_uid" "$host_media_gid"
+                ensure_dir /appdata/nextcloud 2770 "$host_root_uid" "$host_media_gid"
+
+                # Service-specific ownership is handled inside these containers.
+                ensure_dir /appdata/immich 0750 "$host_root_uid" "$host_root_gid"
+                ensure_dir /appdata/openclaw 0750 "$host_root_uid" "$host_root_gid"
+                ensure_dir /appdata/nomad 0750 "$host_root_uid" "$host_root_gid"
               '';
             };
 

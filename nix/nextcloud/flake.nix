@@ -44,7 +44,7 @@
               package = pkgs.nextcloud32;
               hostName = "192.168.68.34";
               https = false;
-              home = "/appdata/nextcloud";
+              home = "/appdata";
               config = {
                 dbtype = "sqlite";
                 adminuser = nextcloudBootstrapUsername;

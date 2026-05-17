@@ -45,7 +45,7 @@
             users.users.prowlarr = {
               isSystemUser = true;
               group = "media";
-              home = "/appdata/prowlarr";
+              home = "/appdata";
             };
 
             services.prowlarr = {
@@ -61,39 +61,10 @@
               User = "prowlarr";
               Group = "media";
               StateDirectory = lib.mkForce "";
-              ExecStart = lib.mkForce "${lib.getExe pkgs.prowlarr} -nobrowser -data=/appdata/prowlarr";
+              ExecStart = lib.mkForce "${lib.getExe pkgs.prowlarr} -nobrowser -data=/appdata";
               UMask = "0002";
             };
-            systemd.services.prowlarr.environment.HOME = lib.mkForce "/appdata/prowlarr";
-            systemd.services.prowlarr.wants = [ "prowlarr-migrate-appdata.service" ];
-            systemd.services.prowlarr.after = [ "prowlarr-migrate-appdata.service" ];
-            systemd.services.prowlarr-migrate-appdata = {
-              description = "Migrate legacy Prowlarr appdata from /media/appdata to /appdata";
-              before = [ "prowlarr.service" ];
-              wantedBy = [ "multi-user.target" ];
-              path = with pkgs; [ coreutils findutils ];
-              serviceConfig = {
-                Type = "oneshot";
-              };
-              script = ''
-                set -eu
-
-                legacy_dir="/media/appdata/prowlarr"
-                target_dir="/appdata/prowlarr"
-
-                [ -d "$legacy_dir" ] || exit 0
-                [ -d "$target_dir" ] || mkdir -p "$target_dir"
-
-                if [ -n "$(find "$target_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
-                  echo "prowlarr-migrate-appdata: target already populated, skipping migration"
-                  exit 0
-                fi
-
-                cp -a "$legacy_dir/." "$target_dir/"
-                chown -R prowlarr:media "$target_dir" || true
-                echo "prowlarr-migrate-appdata: migrated data from $legacy_dir to $target_dir"
-              '';
-            };
+            systemd.services.prowlarr.environment.HOME = lib.mkForce "/appdata";
 
             environment.systemPackages = with pkgs; [ curl jq ];
 
@@ -123,9 +94,13 @@
                 ncore_username="$(read_sops_secret '["services"]["mediaautomation"]["ncore"]["username"]')"
                 ncore_password="$(read_sops_secret '["services"]["mediaautomation"]["ncore"]["password"]')"
                 radarr_api_key="$(read_sops_secret '["services"]["mediaautomation"]["radarr"]["apiKey"]')"
+                [ -n "$radarr_api_key" ] || radarr_api_key="$(read_sops_secret '["services"]["radarr"]["apiKey"]')"
                 sonarr_api_key="$(read_sops_secret '["services"]["mediaautomation"]["sonarr"]["apiKey"]')"
+                [ -n "$sonarr_api_key" ] || sonarr_api_key="$(read_sops_secret '["services"]["sonarr"]["apiKey"]')"
 
                 [ -n "$password" ] || { echo "Missing services.prowlarr.password in $sops_secret_file" >&2; exit 1; }
+                [ -n "$radarr_api_key" ] || { echo "Missing services.mediaautomation.radarr.apiKey (or services.radarr.apiKey) in $sops_secret_file" >&2; exit 1; }
+                [ -n "$sonarr_api_key" ] || { echo "Missing services.mediaautomation.sonarr.apiKey (or services.sonarr.apiKey) in $sops_secret_file" >&2; exit 1; }
 
                 cat > /run/prowlarr-bootstrap.env <<EOF
                 PROWLARR_BOOTSTRAP_USERNAME=${prowlarrBootstrapUsername}

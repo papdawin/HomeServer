@@ -10,14 +10,11 @@ include "lxc_common" {
 locals {
   prowlarr_vmid = 131
 
-  prowlarr_appdata_volume_ref = trimspace(get_env("PROWLARR_APPDATA_VOLUME", include.lxc_common.locals.appdata_storage_path))
-  prowlarr_appdata_mount = merge(
-    {
-      path   = "/appdata"
-      volume = local.prowlarr_appdata_volume_ref
-    },
-    startswith(local.prowlarr_appdata_volume_ref, "/") ? {} : { size = "256G" },
-  )
+  prowlarr_appdata_volume_ref = "${include.lxc_common.locals.appdata_storage_path}/prowlarr"
+  prowlarr_appdata_mount = {
+    path   = "/appdata"
+    volume = local.prowlarr_appdata_volume_ref
+  }
 }
 
 dependencies {

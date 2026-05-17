@@ -3,7 +3,7 @@ set -euo pipefail
 
 base_url="http://127.0.0.1:7878"
 api_url="$base_url/api/v3"
-radarr_config_xml="/appdata/radarr/config.xml"
+radarr_config_xml="/appdata/config.xml"
 
 log() { printf '[radarr-bootstrap-user] %s\n' "$*" >&2; }
 
