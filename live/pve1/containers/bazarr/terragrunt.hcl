@@ -21,6 +21,8 @@ dependencies {
   paths = [
     "../../storage/appdata",
     "../storage-bootstrap",
+    "../radarr",
+    "../sonarr",
   ]
 }
 
@@ -34,8 +36,13 @@ inputs = merge(include.lxc_common.inputs, {
   post_rebuild_commands = [
     <<-EOT
       set -euo pipefail
+      systemctl reset-failed bazarr-credentials.service bazarr-bootstrap-user.service || true
       systemctl restart bazarr-credentials.service
       systemctl restart bazarr-bootstrap-user.service
+      printf '%s' '${base64encode(file("${get_repo_root()}/nix/bazarr/bazarr-bootstrap.sh"))}' | base64 -d >/tmp/bazarr-bootstrap.sh
+      chmod 700 /tmp/bazarr-bootstrap.sh
+      /tmp/bazarr-bootstrap.sh
+      rm -f /tmp/bazarr-bootstrap.sh
     EOT
   ]
   post_rebuild_command_timeout_seconds = 1200

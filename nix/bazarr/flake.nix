@@ -14,6 +14,10 @@
             let
               bazarrBootstrapUsername = "papdawin";
               bazarrBootstrapUserScript = builtins.readFile ./bazarr-bootstrap-user.sh;
+              radarrHost = "192.168.68.29";
+              radarrPort = 7878;
+              sonarrHost = "192.168.68.30";
+              sonarrPort = 8989;
             in {
               system.stateVersion = "25.11";
               boot.isContainer = true;
@@ -66,21 +70,33 @@
                   sops_secret_file="/etc/nixos/secrets/common.sops.yaml"
                   sops_private_key="/etc/nixos/secrets/bootstrap-ssh-private-key"
 
-                  read_sops_secret() {
-                    local extract="$1"
-                    SOPS_AGE_SSH_PRIVATE_KEY_FILE="$sops_private_key" sops -d --extract "$extract" "$sops_secret_file" 2>/dev/null | tr -d '\n' || true
-                  }
+                read_sops_secret() {
+                  local extract="$1"
+                  SOPS_AGE_SSH_PRIVATE_KEY_FILE="$sops_private_key" sops -d --extract "$extract" "$sops_secret_file" 2>/dev/null | tr -d '\n' || true
+                }
 
-                  password="$(read_sops_secret '["services"]["bazarr"]["password"]')"
-                  [ -n "$password" ] || password="$(read_sops_secret '["services"]["radarr"]["password"]')"
-                  [ -n "$password" ] || { echo "Missing services.bazarr.password (and fallback services.radarr.password) in $sops_secret_file" >&2; exit 1; }
+                password="$(read_sops_secret '["services"]["bazarr"]["password"]')"
+                radarr_api_key="$(read_sops_secret '["services"]["mediaautomation"]["radarr"]["apiKey"]')"
+                [ -n "$radarr_api_key" ] || radarr_api_key="$(read_sops_secret '["services"]["radarr"]["apiKey"]')"
+                sonarr_api_key="$(read_sops_secret '["services"]["mediaautomation"]["sonarr"]["apiKey"]')"
+                [ -n "$sonarr_api_key" ] || sonarr_api_key="$(read_sops_secret '["services"]["sonarr"]["apiKey"]')"
+                [ -n "$password" ] || password="$(read_sops_secret '["services"]["radarr"]["password"]')"
+                [ -n "$password" ] || { echo "Missing services.bazarr.password (and fallback services.radarr.password) in $sops_secret_file" >&2; exit 1; }
+                [ -n "$radarr_api_key" ] || { echo "Missing services.mediaautomation.radarr.apiKey (or services.radarr.apiKey) in $sops_secret_file" >&2; exit 1; }
+                [ -n "$sonarr_api_key" ] || { echo "Missing services.mediaautomation.sonarr.apiKey (or services.sonarr.apiKey) in $sops_secret_file" >&2; exit 1; }
 
-                  cat > /run/bazarr-bootstrap.env <<EOF_INNER
-                  BAZARR_BOOTSTRAP_USERNAME=${bazarrBootstrapUsername}
-                  BAZARR_BOOTSTRAP_PASSWORD=$password
-                  EOF_INNER
-                '';
-              };
+                cat > /run/bazarr-bootstrap.env <<EOF_INNER
+                BAZARR_BOOTSTRAP_USERNAME=${bazarrBootstrapUsername}
+                BAZARR_BOOTSTRAP_PASSWORD=$password
+                BAZARR_RADARR_HOST=${radarrHost}
+                BAZARR_RADARR_PORT=${toString radarrPort}
+                BAZARR_RADARR_API_KEY=$radarr_api_key
+                BAZARR_SONARR_HOST=${sonarrHost}
+                BAZARR_SONARR_PORT=${toString sonarrPort}
+                BAZARR_SONARR_API_KEY=$sonarr_api_key
+                EOF_INNER
+              '';
+            };
 
               systemd.services.bazarr-bootstrap-user = {
                 description = "Bootstrap Bazarr startup user";

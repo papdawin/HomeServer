@@ -205,6 +205,15 @@ enable_completed_download_handling() {
   api_call PUT "config/downloadClient" "$updated" >/dev/null || true
 }
 
+ensure_media_management_defaults() {
+  local cfg updated
+  cfg="$(api_call GET "config/mediamanagement" || true)"
+  [ -n "$cfg" ] || return 0
+
+  updated="$(printf '%s' "$cfg" | jq -c '.createEmptyMovieFolders = true')"
+  api_call PUT "config/mediamanagement" "$updated" >/dev/null || true
+}
+
 synchronize_api_key() {
   local desired_api_key escaped
   desired_api_key="${RADARR_API_KEY:-}"
@@ -255,5 +264,6 @@ ensure_root_folder
 ensure_download_client
 verify_download_client
 enable_completed_download_handling
+ensure_media_management_defaults
 
 log "Bootstrap completed"

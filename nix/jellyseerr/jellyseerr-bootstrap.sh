@@ -7,8 +7,8 @@ set -euo pipefail
 base_url="http://127.0.0.1:5055/api/v1"
 radarr_host="192.168.68.29"
 sonarr_host="192.168.68.30"
-radarr_active_directory="/media/downloads/radarr"
-sonarr_active_directory="/media/downloads/sonarr"
+radarr_active_directory="/media/movies"
+sonarr_active_directory="/media/shows"
 cookie_file=""
 
 log() { printf '[jellyseerr-bootstrap] %s\n' "$*" >&2; }
@@ -142,6 +142,37 @@ wait_arr() {
     sleep 2
   done
   return 1
+}
+
+resolve_arr_root_folder() {
+  local host="$1" port="$2" api_key="$3" preferred="$4" folders selected
+
+  folders="$(curl -fsS -H "X-Api-Key: $api_key" "http://${host}:${port}/api/v3/rootfolder" 2>/dev/null || true)"
+
+  selected="$(
+    printf '%s' "$folders" | jq -r --arg preferred "$preferred" '
+      if type == "array" then
+        (
+          [ .[] | .path // "" | rtrimstr("/") | select(length > 0) ]
+          | if length == 0 then "" else
+              (
+                [ .[] | select(. == ($preferred | rtrimstr("/"))) ][0]
+                // .[0]
+              )
+            end
+        )
+      else
+        ""
+      end
+    ' 2>/dev/null || true
+  )"
+
+  if [ -z "$selected" ]; then
+    printf '%s' "$preferred"
+    return 0
+  fi
+
+  printf '%s' "$selected"
 }
 
 is_initialized() {
@@ -523,6 +554,11 @@ sonarr_api_key="${JELLYSEERR_SONARR_API_KEY:-}"
 
 wait_arr "$radarr_host" 7878 "$radarr_api_key" || { log "Radarr did not become ready in time"; exit 1; }
 wait_arr "$sonarr_host" 8989 "$sonarr_api_key" || { log "Sonarr did not become ready in time"; exit 1; }
+
+radarr_active_directory="$(resolve_arr_root_folder "$radarr_host" 7878 "$radarr_api_key" "/media/movies")"
+sonarr_active_directory="$(resolve_arr_root_folder "$sonarr_host" 8989 "$sonarr_api_key" "/media/shows")"
+log "Using Radarr root folder for Jellyseerr: $radarr_active_directory"
+log "Using Sonarr root folder for Jellyseerr: $sonarr_active_directory"
 
 auth_with_jellyfin
 

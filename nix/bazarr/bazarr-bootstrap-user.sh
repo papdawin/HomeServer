@@ -70,7 +70,7 @@ login_works() {
   [ "$code" = "204" ]
 }
 
-systemctl start bazarr-credentials.service
+[ -f /run/bazarr-bootstrap.env ] || { log "Missing /run/bazarr-bootstrap.env"; exit 1; }
 . /run/bazarr-bootstrap.env
 
 username="${BAZARR_BOOTSTRAP_USERNAME:-}"
