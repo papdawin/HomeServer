@@ -117,7 +117,7 @@
 
                 # Service-specific ownership is handled inside these containers.
                 ensure_dir /appdata/immich 0750 "$host_root_uid" "$host_root_gid"
-                ensure_dir /appdata/openclaw 0750 "$host_root_uid" "$host_root_gid"
+                ensure_dir /appdata/hermes 0750 "$host_root_uid" "$host_root_gid"
                 ensure_dir /appdata/nomad 0750 "$host_root_uid" "$host_root_gid"
               '';
             };

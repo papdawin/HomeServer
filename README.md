@@ -37,7 +37,7 @@ _Proxmox UI screencapture showing the resources and containers provisioned by Te
 | `storage-bootstrap` | 124 | 192.168.68.24 | Initializes `/media` layout, permissions, and helper appdata mounts. |
 | `jellyfin` | 125 | 192.168.68.25 | Media streaming server. |
 | `qbittorrent` | 126 | 192.168.68.26 | Download client for automation pipeline. |
-| `openclaw` | 127 | 192.168.68.27 | OpenClaw gateway service. |
+| `hermes` | 127 | 192.168.68.27 | Hermes Agent gateway service with Honcho and Hermes WebUI. |
 | `nomad` | 133 | 192.168.68.33 | Nomad travel/planning service container. |
 | `immich` | 128 | 192.168.68.28 | Photo/video backup and gallery service. |
 | `radarr` | 129 | 192.168.68.29 | Movie automation and library management. |
