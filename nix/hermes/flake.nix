@@ -14,7 +14,7 @@
           (import "/etc/nixos/configuration.nix"))
         ++ [
           hermes-agent.nixosModules.default
-          ({ config, pkgs, ... }:
+          ({ config, pkgs, lib, ... }:
           let
             hermesWebuiStart = pkgs.writeShellScript "hermes-webui-start" ''
               set -euo pipefail
@@ -24,6 +24,20 @@
                   "${config.services.hermes-agent.package}/bin/hermes"
               )"
               exec ${pkgs.python3}/bin/python3 /appdata/hermes-webui/bootstrap.py --foreground --no-browser --host 0.0.0.0 8787
+            '';
+            hermesWebuiCli = pkgs.writeShellScriptBin "hermes-webui-cli" ''
+              set -euo pipefail
+
+              if [ "$(id -u)" -eq 0 ]; then
+                exec ${pkgs.sudo}/bin/sudo -u hermes \
+                  HOME=/appdata \
+                  HERMES_HOME=/appdata/.hermes \
+                  ${config.services.hermes-agent.package}/bin/hermes "$@"
+              fi
+
+              export HOME=/appdata
+              export HERMES_HOME=/appdata/.hermes
+              exec ${config.services.hermes-agent.package}/bin/hermes "$@"
             '';
           in {
             system.stateVersion = "25.11";
@@ -49,6 +63,7 @@
               ];
               hashedPasswordFile = "/etc/nixos/secrets/papdawin-password-hash";
             };
+            users.users.hermes.shell = lib.mkForce pkgs.bashInteractive;
 
             services.hermes-agent = {
               enable = true;
@@ -59,6 +74,26 @@
               settings = {
                 model.default = "anthropic/claude-sonnet-4";
                 toolsets = [ "all" ];
+                platform_toolsets = {
+                  cli = [
+                    "all"
+                    "moa"
+                    "homeassistant"
+                    "spotify"
+                    "video"
+                    "video_gen"
+                    "x_search"
+                  ];
+                  api_server = [
+                    "all"
+                    "moa"
+                    "homeassistant"
+                    "spotify"
+                    "video"
+                    "video_gen"
+                    "x_search"
+                  ];
+                };
               };
             };
 
@@ -133,6 +168,7 @@
 
             networking.firewall.allowPing = true;
             networking.firewall.allowedTCPPorts = [ 22 8787 ];
+            environment.systemPackages = [ hermesWebuiCli ];
           })
         ];
     };
