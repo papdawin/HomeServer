@@ -91,16 +91,16 @@
                 }
 
                 password="$(read_sops_secret '["services"]["prowlarr"]["password"]')"
-                ncore_username="$(read_sops_secret '["services"]["mediaautomation"]["ncore"]["username"]')"
-                ncore_password="$(read_sops_secret '["services"]["mediaautomation"]["ncore"]["password"]')"
-                radarr_api_key="$(read_sops_secret '["services"]["mediaautomation"]["radarr"]["apiKey"]')"
-                [ -n "$radarr_api_key" ] || radarr_api_key="$(read_sops_secret '["services"]["radarr"]["apiKey"]')"
-                sonarr_api_key="$(read_sops_secret '["services"]["mediaautomation"]["sonarr"]["apiKey"]')"
-                [ -n "$sonarr_api_key" ] || sonarr_api_key="$(read_sops_secret '["services"]["sonarr"]["apiKey"]')"
+                ncore_username="$(read_sops_secret '["services"]["ncore"]["username"]')"
+                [ -n "$ncore_username" ] || ncore_username="$(read_sops_secret '["services"]["prowlarr"]["ncore"]["username"]')"
+                ncore_password="$(read_sops_secret '["services"]["ncore"]["password"]')"
+                [ -n "$ncore_password" ] || ncore_password="$(read_sops_secret '["services"]["prowlarr"]["ncore"]["password"]')"
+                radarr_api_key="$(read_sops_secret '["services"]["radarr"]["apiKey"]')"
+                sonarr_api_key="$(read_sops_secret '["services"]["sonarr"]["apiKey"]')"
 
                 [ -n "$password" ] || { echo "Missing services.prowlarr.password in $sops_secret_file" >&2; exit 1; }
-                [ -n "$radarr_api_key" ] || { echo "Missing services.mediaautomation.radarr.apiKey (or services.radarr.apiKey) in $sops_secret_file" >&2; exit 1; }
-                [ -n "$sonarr_api_key" ] || { echo "Missing services.mediaautomation.sonarr.apiKey (or services.sonarr.apiKey) in $sops_secret_file" >&2; exit 1; }
+                [ -n "$radarr_api_key" ] || { echo "Missing services.radarr.apiKey in $sops_secret_file" >&2; exit 1; }
+                [ -n "$sonarr_api_key" ] || { echo "Missing services.sonarr.apiKey in $sops_secret_file" >&2; exit 1; }
 
                 cat > /run/prowlarr-bootstrap.env <<EOF
                 PROWLARR_BOOTSTRAP_USERNAME=${prowlarrBootstrapUsername}

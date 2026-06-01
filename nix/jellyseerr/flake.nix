@@ -86,17 +86,17 @@
                   SOPS_AGE_SSH_PRIVATE_KEY_FILE="$sops_private_key" sops -d --extract "$extract" "$sops_secret_file" 2>/dev/null | tr -d '\n' || true
                 }
 
-                jellyfin_username="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["mediaautomation"]["jellyfin"]["username"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
-                jellyfin_password="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["mediaautomation"]["jellyfin"]["password"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
-                radarr_api_key="$(read_sops_secret '["services"]["mediaautomation"]["radarr"]["apiKey"]')"
-                [ -n "$radarr_api_key" ] || radarr_api_key="$(read_sops_secret '["services"]["radarr"]["apiKey"]')"
-                sonarr_api_key="$(read_sops_secret '["services"]["mediaautomation"]["sonarr"]["apiKey"]')"
-                [ -n "$sonarr_api_key" ] || sonarr_api_key="$(read_sops_secret '["services"]["sonarr"]["apiKey"]')"
+                jellyfin_username="$(read_sops_secret '["services"]["jellyfin"]["username"]')"
+                [ -n "$jellyfin_username" ] || jellyfin_username="${jellyseerrBootstrapUsername}"
+                jellyfin_password="$(read_sops_secret '["services"]["jellyfin"]["password"]')"
+                radarr_api_key="$(read_sops_secret '["services"]["radarr"]["apiKey"]')"
+                sonarr_api_key="$(read_sops_secret '["services"]["sonarr"]["apiKey"]')"
                 jellyseerr_password="$(read_sops_secret '["services"]["jellyseerr"]["password"]')"
                 [ -n "$jellyseerr_password" ] || jellyseerr_password="$(read_sops_secret '["services"]["radarr"]["password"]')"
                 [ -n "$jellyseerr_password" ] || { echo "Missing services.jellyseerr.password and services.radarr.password in $sops_secret_file" >&2; exit 1; }
-                [ -n "$radarr_api_key" ] || { echo "Missing services.mediaautomation.radarr.apiKey (or services.radarr.apiKey) in $sops_secret_file" >&2; exit 1; }
-                [ -n "$sonarr_api_key" ] || { echo "Missing services.mediaautomation.sonarr.apiKey (or services.sonarr.apiKey) in $sops_secret_file" >&2; exit 1; }
+                [ -n "$jellyfin_password" ] || { echo "Missing services.jellyfin.password in $sops_secret_file" >&2; exit 1; }
+                [ -n "$radarr_api_key" ] || { echo "Missing services.radarr.apiKey in $sops_secret_file" >&2; exit 1; }
+                [ -n "$sonarr_api_key" ] || { echo "Missing services.sonarr.apiKey in $sops_secret_file" >&2; exit 1; }
 
                 cat > /run/jellyseerr-bootstrap.env <<EOF_INNER
                 JELLYSEERR_JELLYFIN_HOST=jellyfin.home.arpa

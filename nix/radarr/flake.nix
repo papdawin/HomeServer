@@ -68,10 +68,23 @@
                   set -eu
                   umask 077
 
-                  qbt_username="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["mediaautomation"]["qbittorrent"]["username"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
-                  qbt_password="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["mediaautomation"]["qbittorrent"]["password"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
-                  password="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["radarr"]["password"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
-                  api_key="$(SOPS_AGE_SSH_PRIVATE_KEY_FILE=/etc/nixos/secrets/bootstrap-ssh-private-key sops -d --extract '["services"]["mediaautomation"]["radarr"]["apiKey"]' /etc/nixos/secrets/common.sops.yaml | tr -d '\n')"
+                  sops_secret_file="/etc/nixos/secrets/common.sops.yaml"
+                  sops_private_key="/etc/nixos/secrets/bootstrap-ssh-private-key"
+
+                  read_sops_secret() {
+                    local extract="$1"
+                    SOPS_AGE_SSH_PRIVATE_KEY_FILE="$sops_private_key" sops -d --extract "$extract" "$sops_secret_file" 2>/dev/null | tr -d '\n' || true
+                  }
+
+                  qbt_username="$(read_sops_secret '["services"]["qbittorrent"]["username"]')"
+                  [ -n "$qbt_username" ] || qbt_username="${radarrBootstrapUsername}"
+                  qbt_password="$(read_sops_secret '["services"]["qbittorrent"]["password"]')"
+                  password="$(read_sops_secret '["services"]["radarr"]["password"]')"
+                  api_key="$(read_sops_secret '["services"]["radarr"]["apiKey"]')"
+
+                  [ -n "$qbt_password" ] || { echo "Missing services.qbittorrent.password in $sops_secret_file" >&2; exit 1; }
+                  [ -n "$password" ] || { echo "Missing services.radarr.password in $sops_secret_file" >&2; exit 1; }
+                  [ -n "$api_key" ] || { echo "Missing services.radarr.apiKey in $sops_secret_file" >&2; exit 1; }
 
                   cat > /run/radarr-bootstrap.env <<EOF_INNER
                   RADARR_QBITTORRENT_HOST=${qbittorrentHost}

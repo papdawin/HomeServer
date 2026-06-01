@@ -76,14 +76,12 @@
                 }
 
                 password="$(read_sops_secret '["services"]["bazarr"]["password"]')"
-                radarr_api_key="$(read_sops_secret '["services"]["mediaautomation"]["radarr"]["apiKey"]')"
-                [ -n "$radarr_api_key" ] || radarr_api_key="$(read_sops_secret '["services"]["radarr"]["apiKey"]')"
-                sonarr_api_key="$(read_sops_secret '["services"]["mediaautomation"]["sonarr"]["apiKey"]')"
-                [ -n "$sonarr_api_key" ] || sonarr_api_key="$(read_sops_secret '["services"]["sonarr"]["apiKey"]')"
+                radarr_api_key="$(read_sops_secret '["services"]["radarr"]["apiKey"]')"
+                sonarr_api_key="$(read_sops_secret '["services"]["sonarr"]["apiKey"]')"
                 [ -n "$password" ] || password="$(read_sops_secret '["services"]["radarr"]["password"]')"
                 [ -n "$password" ] || { echo "Missing services.bazarr.password (and fallback services.radarr.password) in $sops_secret_file" >&2; exit 1; }
-                [ -n "$radarr_api_key" ] || { echo "Missing services.mediaautomation.radarr.apiKey (or services.radarr.apiKey) in $sops_secret_file" >&2; exit 1; }
-                [ -n "$sonarr_api_key" ] || { echo "Missing services.mediaautomation.sonarr.apiKey (or services.sonarr.apiKey) in $sops_secret_file" >&2; exit 1; }
+                [ -n "$radarr_api_key" ] || { echo "Missing services.radarr.apiKey in $sops_secret_file" >&2; exit 1; }
+                [ -n "$sonarr_api_key" ] || { echo "Missing services.sonarr.apiKey in $sops_secret_file" >&2; exit 1; }
 
                 cat > /run/bazarr-bootstrap.env <<EOF_INNER
                 BAZARR_BOOTSTRAP_USERNAME=${bazarrBootstrapUsername}

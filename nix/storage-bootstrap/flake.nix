@@ -55,6 +55,10 @@
               isSystemUser = true;
               group = "media";
             };
+            users.users.gotify = {
+              isSystemUser = true;
+              group = "media";
+            };
 
             systemd.services."storage-bootstrap" = {
               description = "Bootstrap shared storage directory layout and ownership";
@@ -114,6 +118,7 @@
                 ensure_dir /appdata/sonarr 2770 "$host_root_uid" "$host_media_gid"
                 ensure_dir /appdata/bazarr 2770 "$host_root_uid" "$host_media_gid"
                 ensure_dir /appdata/nextcloud 2770 "$host_root_uid" "$host_media_gid"
+                ensure_dir /appdata/gotify 2770 "$host_root_uid" "$host_media_gid"
 
                 # Service-specific ownership is handled inside these containers.
                 ensure_dir /appdata/immich 0750 "$host_root_uid" "$host_root_gid"

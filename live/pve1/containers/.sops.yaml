@@ -1,4 +1,4 @@
 creation_rules:
-  - path_regex: .*\.sops\.ya?ml$
-    age: >-
+  - age: >-
       ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN3/cdC4JkaYQQMt7spl+5p8f0JmW7+8BQ6ZI0zZXPMe papdawin@desktop
+    path_regex: .*\.sops\.ya?ml$
