@@ -331,29 +331,28 @@ ensure_arr_services() {
 }
 
 configure_jellyfin() {
-  local payload libraries library_ids host
+  local payload host current_host
 
   host="$(jellyfin_base_url)"
-  payload="$(jq -cn \
-    --arg host "$host" \
-    --arg user "$JELLYSEERR_JELLYFIN_USERNAME" \
-    --arg pass "$JELLYSEERR_JELLYFIN_PASSWORD" \
-    '{
-      hostname: $host,
-      externalHostname: $host,
-      adminUser: $user,
-      adminPass: $pass
-    }')"
+  current_host="$(api_call GET "settings/jellyfin" | jq -r '.hostname // empty' 2>/dev/null || true)"
+  if [ -n "$current_host" ]; then
+    log "Jellyfin service already configured in Jellyseerr: $current_host"
+  else
+    payload="$(jq -cn \
+      --arg host "$host" \
+      --arg user "$JELLYSEERR_JELLYFIN_USERNAME" \
+      --arg pass "$JELLYSEERR_JELLYFIN_PASSWORD" \
+      '{
+        hostname: $host,
+        externalHostname: $host,
+        adminUser: $user,
+        adminPass: $pass
+      }')"
 
-  api_call POST "settings/jellyfin" "$payload" >/dev/null
-
-  libraries="$(api_call GET "settings/jellyfin/library?sync=true" || true)"
-  library_ids="$(printf '%s' "$libraries" | jq -r '.[].id' 2>/dev/null | paste -sd, -)"
-  if [ -n "$library_ids" ]; then
-    api_call GET "settings/jellyfin/library?enable=$library_ids" >/dev/null || true
+    api_call POST "settings/jellyfin" "$payload" >/dev/null
   fi
 
-  log "Configured Jellyfin service in Jellyseerr"
+  log "Verified Jellyfin service in Jellyseerr"
 }
 
 auth_with_jellyfin() {
@@ -444,6 +443,39 @@ auth_with_jellyfin() {
   rm -f "$body_file"
 
   [ "$ok" -eq 1 ] || { log "Unable to authenticate to Jellyseerr via Jellyfin endpoints"; return 1; }
+}
+
+auth_with_local() {
+  local username password email payload code body_file
+
+  username="${JELLYSEERR_BOOTSTRAP_USERNAME:-}"
+  password="${JELLYSEERR_BOOTSTRAP_PASSWORD:-}"
+  email="${JELLYSEERR_BOOTSTRAP_EMAIL:-${username}@local.invalid}"
+  [ -n "$username" ] && [ -n "$password" ] || return 1
+
+  cookie_file="$(mktemp)"
+  body_file="$(mktemp)"
+
+  for email in "$email" "$username"; do
+    payload="$(jq -cn --arg email "$email" --arg password "$password" '{ email: $email, password: $password }')"
+    code="$(
+      curl -sS -o "$body_file" -w '%{http_code}' \
+        -c "$cookie_file" \
+        -b "$cookie_file" \
+        -X POST \
+        -H "Content-Type: application/json" \
+        --data "$payload" \
+        "$base_url/auth/local" || true
+    )"
+    if [ "$code" = "200" ]; then
+      log "Authenticated to Jellyseerr via local login"
+      rm -f "$body_file"
+      return 0
+    fi
+  done
+
+  rm -f "$body_file"
+  return 1
 }
 
 ensure_local_login_enabled() {
@@ -560,7 +592,11 @@ sonarr_active_directory="$(resolve_arr_root_folder "$sonarr_host" 8989 "$sonarr_
 log "Using Radarr root folder for Jellyseerr: $radarr_active_directory"
 log "Using Sonarr root folder for Jellyseerr: $sonarr_active_directory"
 
-auth_with_jellyfin
+if is_initialized && auth_with_local; then
+  log "Using existing Jellyseerr local admin session"
+else
+  auth_with_jellyfin
+fi
 
 if ! is_initialized; then
   api_call POST "settings/initialize" '{}' >/dev/null

@@ -46,6 +46,10 @@ _Proxmox UI screencapture showing the resources and containers provisioned by Te
 | `jellyseerr` | 132 | 192.168.68.32 | User request portal integrated with Jellyfin and *arr apps. |
 | `nextcloud` | 134 | 192.168.68.34 | Personal cloud/file sync service with full shared media mount access. |
 | `bazarr` | 135 | 192.168.68.35 | Subtitle management integrated with Sonarr/Radarr. |
+| `mealie` | 136 | 192.168.68.36 | Recipe and meal planning service. |
+| `gotify` | 137 | 192.168.68.37 | Self-hosted notification service. |
+| `traefik` | 138 | 192.168.68.38 | HTTPS reverse proxy for `*.home.papdavid.eu`. |
+| `adguardhome` | 139 | 192.168.68.39 | Local DNS server with wildcard rewrite to Traefik. |
 
 ![Container diagram](https://github.com/papdawin/HomeServer/blob/main/pictures/container-diagram.png?raw=true)
 

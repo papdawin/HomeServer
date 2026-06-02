@@ -146,7 +146,12 @@
             };
 
             networking.firewall.allowPing = true;
-            networking.firewall.allowedTCPPorts = [ 22 9696 ];
+            networking.firewall.allowedTCPPorts = [ 22 ];
+            networking.firewall.extraCommands = ''
+              iptables -A nixos-fw -p tcp -s 192.168.68.38 --dport 9696 -j nixos-fw-accept
+              iptables -A nixos-fw -p tcp -s 192.168.68.29 --dport 9696 -j nixos-fw-accept
+              iptables -A nixos-fw -p tcp -s 192.168.68.30 --dport 9696 -j nixos-fw-accept
+            '';
           })
         ];
     };

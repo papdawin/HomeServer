@@ -46,7 +46,7 @@
               port = 9000;
               settings = {
                 ALLOW_SIGNUP = "false";
-                BASE_URL = "http://192.168.68.36";
+                BASE_URL = "https://mealie.home.papdavid.eu";
                 DATA_DIR = "/appdata";
                 DEFAULT_GROUP = "Home";
                 DEFAULT_HOUSEHOLD = "Family";
@@ -101,7 +101,10 @@
             };
 
             networking.firewall.allowPing = true;
-            networking.firewall.allowedTCPPorts = [ 22 80 9000 ];
+            networking.firewall.allowedTCPPorts = [ 22 ];
+            networking.firewall.extraCommands = ''
+              iptables -A nixos-fw -p tcp -s 192.168.68.38 --dport 80 -j nixos-fw-accept
+            '';
           })
         ];
     };

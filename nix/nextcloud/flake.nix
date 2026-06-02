@@ -42,7 +42,7 @@
             services.nextcloud = {
               enable = true;
               package = pkgs.nextcloud32;
-              hostName = "192.168.68.34";
+              hostName = "nextcloud.home.papdavid.eu";
               https = false;
               home = "/appdata";
               config = {
@@ -54,7 +54,10 @@
                 trusted_domains = [
                   "192.168.68.34"
                   "nextcloud"
+                  "nextcloud.home.papdavid.eu"
                 ];
+                overwriteprotocol = "https";
+                trusted_proxies = [ "192.168.68.38" ];
               };
             };
 
@@ -115,7 +118,10 @@
             };
 
             networking.firewall.allowPing = true;
-            networking.firewall.allowedTCPPorts = [ 22 80 ];
+            networking.firewall.allowedTCPPorts = [ 22 ];
+            networking.firewall.extraCommands = ''
+              iptables -A nixos-fw -p tcp -s 192.168.68.38 --dport 80 -j nixos-fw-accept
+            '';
           })
         ];
     };
