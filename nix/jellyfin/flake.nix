@@ -128,6 +128,7 @@
             networking.firewall.allowedTCPPorts = [ 22 ];
             networking.firewall.extraCommands = ''
               iptables -A nixos-fw -p tcp -s 192.168.68.38 --dport 8096 -j nixos-fw-accept
+              iptables -A nixos-fw -p tcp -s 192.168.68.32 --dport 8096 -j nixos-fw-accept
             '';
           })
         ];
