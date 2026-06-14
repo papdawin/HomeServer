@@ -78,6 +78,7 @@
               iptables -A nixos-fw -p tcp -s 192.168.68.38 --dport 8080 -j nixos-fw-accept
               iptables -A nixos-fw -p tcp -s 192.168.68.29 --dport 8080 -j nixos-fw-accept
               iptables -A nixos-fw -p tcp -s 192.168.68.30 --dport 8080 -j nixos-fw-accept
+              iptables -A nixos-fw -p tcp -s 192.168.68.40 --dport 8080 -j nixos-fw-accept
             '';
           })
         ];

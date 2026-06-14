@@ -50,6 +50,8 @@ _Proxmox UI screencapture showing the resources and containers provisioned by Te
 | `gotify` | 137 | 192.168.68.37 | Self-hosted notification service. |
 | `traefik` | 138 | 192.168.68.38 | HTTPS reverse proxy for `*.home.papdavid.eu`. |
 | `adguardhome` | 139 | 192.168.68.39 | Local DNS server with wildcard rewrite to Traefik. |
+| `lidarr` | 140 | 192.168.68.40 | Music automation and library management. |
+| `kima` | 141 | 192.168.68.41 | Self-hosted music streaming and discovery integrated with Lidarr. |
 
 ![Container diagram](https://github.com/papdawin/HomeServer/blob/main/pictures/container-diagram.png?raw=true)
 

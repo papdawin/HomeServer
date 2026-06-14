@@ -55,6 +55,14 @@
               isSystemUser = true;
               group = "media";
             };
+            users.users.lidarr = {
+              isSystemUser = true;
+              group = "media";
+            };
+            users.users.kima = {
+              isSystemUser = true;
+              group = "media";
+            };
             users.users.gotify = {
               isSystemUser = true;
               group = "media";
@@ -100,9 +108,11 @@
                 ensure_dir /media 2775 "$host_root_uid" "$host_media_gid"
                 ensure_dir /media/movies 2775 "$host_root_uid" "$host_media_gid"
                 ensure_dir /media/shows 2775 "$host_root_uid" "$host_media_gid"
+                ensure_dir /media/music 2775 "$host_root_uid" "$host_media_gid"
                 ensure_dir /media/downloads 2775 "$host_root_uid" "$host_media_gid"
                 ensure_dir /media/downloads/radarr 2775 "$host_root_uid" "$host_media_gid"
                 ensure_dir /media/downloads/sonarr 2775 "$host_root_uid" "$host_media_gid"
+                ensure_dir /media/downloads/lidarr 2775 "$host_root_uid" "$host_media_gid"
                 ensure_dir /media/downloads/other 2775 "$host_root_uid" "$host_media_gid"
                 ensure_dir /media/downloads/incomplete 2775 "$host_root_uid" "$host_media_gid"
 
@@ -117,6 +127,8 @@
                 ensure_dir /appdata/radarr 2770 "$host_root_uid" "$host_media_gid"
                 ensure_dir /appdata/sonarr 2770 "$host_root_uid" "$host_media_gid"
                 ensure_dir /appdata/bazarr 2770 "$host_root_uid" "$host_media_gid"
+                ensure_dir /appdata/lidarr 2770 "$host_root_uid" "$host_media_gid"
+                ensure_dir /appdata/kima 0755 "$host_root_uid" "$host_root_gid"
                 ensure_dir /appdata/nextcloud 2770 "$host_root_uid" "$host_media_gid"
                 ensure_dir /appdata/gotify 2770 "$host_root_uid" "$host_media_gid"
 

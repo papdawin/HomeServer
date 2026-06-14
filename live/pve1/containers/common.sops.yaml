@@ -23,6 +23,9 @@ services:
         password: ENC[AES256_GCM,data:6nwv3xJnBZc=,iv:LAivl1Jd2M8AO2UNe3MM6GunZoUsgMli5q6ecoVJcww=,tag:5Tg7BJ2TNoCkh5jCvYkz4w==,type:str]
     gotify:
         password: ENC[AES256_GCM,data:JsHaWYdQYtV2xaRVj7WVOxEcBhONBcMq8iZoZEYOYpw=,iv:h08Qqheo3EjnEg/L+8YWjzmkYZzqhJA/b0JiUiVTEXo=,tag:Sd5IucNf9w8FhnRG9t6FIA==,type:str]
+    lidarr:
+        password: ENC[AES256_GCM,data:dobNK8GO82A=,iv:oAZ6smw24zMlJ5kfLu18tF2RgaMCUezmSe/5VEApwo0=,tag:wk4nvWk8nmWoTeCo3yF2bg==,type:str]
+        apiKey: ENC[AES256_GCM,data:HPQRp4S/hGyIObtI3ijkN3Zq0WgFwCHrd2Wiud30VdqhicNmcWjvGBV7+V4h3t6PfaK4kUh122Z1HkzaxM6Y0A==,iv:3YvYdjTZJnsmnAwXFjRxnNE6+W5XO+pWRg0T24jUlYg=,tag:kp1xjPob8imzjH/NsDMyeg==,type:str]
 users:
     papdawin:
         passwordHash: ENC[AES256_GCM,data:Umna4SfNe7Y3OtZkWYjZfHqDAmMfnDFzo1tCi29NMUa5DmMx1NjyPg+xHHlXmiCzMwTlTcTNki3uC8BCoEqjVPBJ7Y3EvR5NuqzL/rfNCxiSZb8qPHIUFgfYpgyR58rzYPEYbOnAXxCXqw==,iv:DVDGMurx2J7kxFekfA5ps9O69eTQ9lycTzXqL2cd7ik=,tag:WbvQgL338IBNTCp5Wj3tMw==,type:str]
@@ -38,7 +41,7 @@ sops:
             rzsWfi+dOmv/BHIA2c+wGK9wWkYIe03J5C3zB85Klt3+95eRb/loDSYphaW6+EhZ
             hOwdBg==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-06-01T20:47:15Z"
-    mac: ENC[AES256_GCM,data:15BQ4MImPlf7SLQIFEmGweWh4+lEHsFy78qK+cCafHBefzJql9s1JkPCUkN4ZgB0A75wNL6oUsPYl9iGeo6dvwTk7HBK5Nra0JNSl+1qIP/w69q5POVavtUwwh5K2gLmKLRYh5hvq9nTYLf0sJqaq0dr6fuwdZTjcNwbsRuBG9Q=,iv:gvXFJksW1iSOPnAqXvEzpcg3fNmALYB7LDDhcwIhdQg=,tag:DUScC2bVYBDe9Ha+jv9Fsw==,type:str]
+    lastmodified: "2026-06-14T20:06:22Z"
+    mac: ENC[AES256_GCM,data:c+GS/CuCg9AzHvH+y6okg1wBgSygZcDs0ow6rMOeGJpjZfKuZQmV5c4gUYbDJMjPwrc+tzel2gYStvZuQ//nRWDZ4oubvC7lEUR41d//aHvrVYksIvgegBs87LJykN/HN2pBKab07QNQIfBk8uC/DuBXZvkZBYcOLqv59yMDb80=,iv:S4YniwuD+rfr6/h1X4C79INqqWHQ/ezb5Y4gYIHq05o=,tag:RQLD22w3+mrOcDmgoU5bIA==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.11.0

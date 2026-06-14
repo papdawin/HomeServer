@@ -41,6 +41,14 @@
                   host = "jellyseerr";
                   url = "http://192.168.68.32:5055";
                 };
+                kima = {
+                  host = "kima";
+                  url = "http://192.168.68.41:3030";
+                };
+                lidarr = {
+                  host = "lidarr";
+                  url = "http://192.168.68.40:8686";
+                };
                 mealie = {
                   host = "mealie";
                   url = "http://192.168.68.36:80";
