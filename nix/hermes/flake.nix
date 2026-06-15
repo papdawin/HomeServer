@@ -140,7 +140,7 @@
                   "HERMES_HOME=/appdata/.hermes"
                   "HERMES_WEBUI_HOST=0.0.0.0"
                   "HERMES_WEBUI_PORT=8787"
-                  "HERMES_WEBUI_ALLOWED_ORIGINS=http://192.168.68.27:8787"
+                  "HERMES_WEBUI_ALLOWED_ORIGINS=http://192.168.68.27:8787,https://hermes.home.papdavid.eu"
                   "HERMES_WEBUI_ONBOARDING_OPEN=1"
                   "HERMES_WEBUI_STATE_DIR=/appdata/.hermes/webui"
                   "PATH=/run/current-system/sw/bin:/usr/bin:/bin"
