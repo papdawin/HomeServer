@@ -72,7 +72,10 @@
               extraPackages = [ pkgs.honcho ];
               extraDependencyGroups = [ "honcho" ];
               settings = {
-                model.default = "anthropic/claude-sonnet-4";
+                model = {
+                  provider = "openai-api";
+                  default = "gpt-5.4";
+                };
                 toolsets = [ "all" ];
                 platform_toolsets = {
                   cli = [
