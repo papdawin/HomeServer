@@ -61,6 +61,10 @@
                   host = "nomad";
                   url = "http://192.168.68.33:3000";
                 };
+                observability = {
+                  host = "observability";
+                  url = "http://192.168.68.42:3000";
+                };
                 prowlarr = {
                   host = "prowlarr";
                   url = "http://192.168.68.31:9696";

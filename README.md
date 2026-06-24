@@ -52,6 +52,7 @@ _Proxmox UI screencapture showing the resources and containers provisioned by Te
 | `adguardhome` | 139 | 192.168.68.39 | Local DNS server with wildcard rewrite to Traefik. |
 | `lidarr` | 140 | 192.168.68.40 | Music automation and library management. |
 | `kima` | 141 | 192.168.68.41 | Self-hosted music streaming and discovery integrated with Lidarr. |
+| `observability` | 142 | 192.168.68.42 | Grafana, Prometheus, Loki, and Promtail bootstrap observability stack. |
 
 ![Container diagram](https://github.com/papdawin/HomeServer/blob/main/pictures/container-diagram.png?raw=true)
 
