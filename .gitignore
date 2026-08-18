@@ -1,7 +1,38 @@
+# Local credentials and environment files
+.env
+.env.*
+!.env.example
+kubeconfig
+talosconfig
+*.key
+*.pem
+*.p12
+
+# Decrypted or work-in-progress secrets
+secrets/**/*.plain.yaml
+secrets/**/*.dec.yaml
+secrets/**/*.decrypted.yaml
+
+# Local rendering and tool output
+.rendered/
+tmp/
+charts/
 .terragrunt-cache/
-.tfstate/
+.terragrunt-state/
+.terraform/
 *.tfstate
 *.tfstate.*
-**/.terraform/
-.env
+*.tfplan
+crash.log
+crash.*.log
+
+# Terraform dependency locks are intentionally committed from each live unit.
+!.terraform.lock.hcl
+
+# Editor and OS state
 .codex
+.DS_Store
+*.swp
+*.swo
+
+handoff.md

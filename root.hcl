@@ -1,63 +1,57 @@
 locals {
-  pm_api_url_raw        = get_env("PM_API_URL", "https://192.168.68.4:8006/api2/json")
-  pm_api_base_url       = trimsuffix(local.pm_api_url_raw, "/api2/json")
-  pm_endpoint           = endswith(local.pm_api_base_url, "/") ? local.pm_api_base_url : "${local.pm_api_base_url}/"
-  pm_tls_insecure       = lower(get_env("PM_TLS_INSECURE", "true")) == "true"
-  pm_api_token_id       = get_env("PM_API_TOKEN_ID", "")
-  pm_api_token_secret   = get_env("PM_API_TOKEN_SECRET", "")
-  pm_api_token_combined = local.pm_api_token_id != "" && local.pm_api_token_secret != "" ? "${local.pm_api_token_id}=${local.pm_api_token_secret}" : local.pm_api_token_id
-  pm_username           = trimspace(get_env("PM_USERNAME", ""))
-  pm_password           = get_env("PM_PASSWORD", "")
-  pm_use_password_auth  = local.pm_username != "" && local.pm_password != ""
+  kubeconfig_path = get_env("KUBECONFIG", "${get_env("HOME")}/homelab/talos/kubeconfig")
+  kube_context    = "admin@pdwncluster"
+  state_path      = "${get_repo_root()}/.terragrunt-state/${path_relative_to_include()}/terraform.tfstate"
 }
 
-remote_state {
-  backend = "local"
-  config = {
-    path = "${get_repo_root()}/.tfstate/${path_relative_to_include()}.tfstate"
-  }
-}
-
-generate "provider" {
-  path      = "provider.tf"
+generate "backend" {
+  path      = "backend.tf"
   if_exists = "overwrite_terragrunt"
-  contents  = <<EOF
-terraform {
-  required_version = ">= 1.6.0"
+  contents  = <<-EOF
+    terraform {
+      backend "local" {
+        path = "${local.state_path}"
+      }
+    }
+  EOF
+}
 
-  required_providers {
-    null = {
-      source  = "hashicorp/null"
-      version = "~> 3.2"
+generate "providers" {
+  path      = "providers.tf"
+  if_exists = "overwrite_terragrunt"
+  contents  = <<-EOF
+    variable "kubeconfig_path" {
+      type        = string
+      description = "Path to the Talos-generated kubeconfig."
     }
 
-    proxmox = {
-      source  = "bpg/proxmox"
-      version = "~> 0.106"
+    variable "kube_context" {
+      type        = string
+      description = "Kubernetes context that Terraform is allowed to manage."
     }
-  }
+
+    provider "kubernetes" {
+      config_path    = var.kubeconfig_path
+      config_context = var.kube_context
+    }
+
+    provider "helm" {
+      kubernetes = {
+        config_path    = var.kubeconfig_path
+        config_context = var.kube_context
+      }
+    }
+
+    provider "kubectl" {
+      config_path      = var.kubeconfig_path
+      config_context   = var.kube_context
+      load_config_file = true
+    }
+
+  EOF
 }
 
-provider "proxmox" {
-  endpoint  = "${local.pm_endpoint}"
-  insecure  = ${local.pm_tls_insecure}
-  username  = ${jsonencode(local.pm_use_password_auth ? local.pm_username : null)}
-  password  = ${jsonencode(local.pm_use_password_auth ? local.pm_password : null)}
-  api_token = ${jsonencode(!local.pm_use_password_auth && local.pm_api_token_combined != "" ? local.pm_api_token_combined : null)}
-}
-EOF
-}
-
-terraform {
-  # Prevent interactive Terraform prompts in all Terragrunt modules.
-  extra_arguments "disable_input" {
-    commands  = get_terraform_commands_that_need_input()
-    arguments = ["-input=false"]
-  }
-
-  # Optional: set TG_AUTO_APPROVE=true for unattended apply/destroy.
-  extra_arguments "auto_approve" {
-    commands  = ["apply", "destroy"]
-    arguments = lower(trimspace(get_env("TG_AUTO_APPROVE", "false"))) == "true" ? ["-auto-approve"] : []
-  }
+inputs = {
+  kubeconfig_path = local.kubeconfig_path
+  kube_context    = local.kube_context
 }

@@ -1,103 +1,49 @@
-# HomeServer
+# Homelab Kubernetes Platform
 
-This repository manages my full homelab media and automation stack on Proxmox using Terraform/Terragrunt for infrastructure and Nix flakes for in-container service configuration.
+Terraform and Terragrunt manage the Kubernetes platform running on two Talos
+VMs. Cilium is already installed and is intentionally outside this stack.
 
-![Proxmox UI resources](https://github.com/papdawin/HomeServer/blob/main/pictures/proxmox.png?raw=true)
+| Role | Name | Address | Capacity |
+| --- | --- | --- | --- |
+| Worker | `talos1` | `192.168.68.6` | 12 vCPU, about 6 GiB RAM |
+| Control plane and worker | `talos2` | `192.168.68.7` | 12 vCPU, about 13 GiB RAM |
+| TrueNAS SCALE 25.10.5 | `truenas` | `192.168.68.108` | Pool `HDD` |
+| AdGuard Home | `adguard` | `192.168.68.8` | LAN DNS |
 
-_Proxmox UI screencapture showing the resources and containers provisioned by Terraform/Terragrunt from this repository._
+The initial applications are Authentik at `https://auth.home.papdavid.eu` and
+Immich at `https://immich.home.papdavid.eu`.
 
-## Tech choices and why
+## Repository layout
 
-| Technology | Why it is used here |
-| --- | --- |
-| Proxmox LXC | Lower overhead than full VMs, fast boot, simple isolation per service. |
-| Terraform (`bpg/proxmox`) | Declarative container/storage provisioning with repeatable state. |
-| Terragrunt | Shared config, dependency orchestration, and clean per-service stacks under `live/`. |
-| NixOS flakes per service | Reproducible, pinned, versioned system config for each container. |
-| SOPS-encrypted shared secrets | Secrets stay encrypted in Git while still being consumable during bootstrap. |
-| Bootstrap scripts (API-driven) | Removes manual first-run UI setup for Jellyfin/Radarr/Sonarr/Prowlarr/Jellyseerr/qBittorrent. |
-| Shared `/media` volume + `media` group | Consistent cross-container file ownership and predictable automation behavior. |
-
-## Architecture
-
-- `modules/lxc`: The "definitions" of my LXC containers, networking, mounts, which then applies the matching Nix flake over SSH.
-- `modules/storage-directory`: Creates the Proxmox directory storage used by the media stack.
-- `live/pve1/storage/media`: Defines shared HDD-backed storage.
-- `live/pve1/storage/appdata`: Defines separate HDD-backed storage for app data volumes.
-- `live/pve1/containers/*`: One stack per service, with explicit dependencies.
-- `nix/<service>/flake.nix`: Service runtime config (ports, users, firewall, bootstrap services).
-- `scripts/ensure-nixos-template.sh`: Auto-downloads NixOS LXC template if missing.
-
-## Currently implemented services
-
-| Stack | VMID | IP | Purpose |
-| --- | ---: | --- | --- |
-| `storage/media` | - | Proxmox storage | Shared directory storage (`rootdir`) for media volumes. |
-| `storage/appdata` | - | Proxmox storage | Shared directory storage (`rootdir`) for app data volumes. |
-| `storage-bootstrap` | 124 | 192.168.68.24 | Initializes `/media` layout, permissions, and helper appdata mounts. |
-| `jellyfin` | 125 | 192.168.68.25 | Media streaming server. |
-| `qbittorrent` | 126 | 192.168.68.26 | Download client for automation pipeline. |
-| `hermes` | 127 | 192.168.68.27 | Hermes Agent gateway service with Honcho and Hermes WebUI. |
-| `nomad` | 133 | 192.168.68.33 | Nomad travel/planning service container. |
-| `immich` | 128 | 192.168.68.28 | Photo/video backup and gallery service. |
-| `radarr` | 129 | 192.168.68.29 | Movie automation and library management. |
-| `sonarr` | 130 | 192.168.68.30 | TV automation and library management. |
-| `prowlarr` | 131 | 192.168.68.31 | Indexer management + sync to Radarr/Sonarr. |
-| `jellyseerr` | 132 | 192.168.68.32 | User request portal integrated with Jellyfin and *arr apps. |
-| `nextcloud` | 134 | 192.168.68.34 | Personal cloud/file sync service with full shared media mount access. |
-| `bazarr` | 135 | 192.168.68.35 | Subtitle management integrated with Sonarr/Radarr. |
-| `mealie` | 136 | 192.168.68.36 | Recipe and meal planning service. |
-| `gotify` | 137 | 192.168.68.37 | Self-hosted notification service. |
-| `traefik` | 138 | 192.168.68.38 | HTTPS reverse proxy for `*.home.papdavid.eu`. |
-| `adguardhome` | 139 | 192.168.68.39 | Local DNS server with wildcard rewrite to Traefik. |
-| `lidarr` | 140 | 192.168.68.40 | Music automation and library management. |
-| `kima` | 141 | 192.168.68.41 | Self-hosted music streaming and discovery integrated with Lidarr. |
-| `observability` | 142 | 192.168.68.42 | Grafana, Prometheus, Loki, and Promtail bootstrap observability stack. |
-
-![Container diagram](https://github.com/papdawin/HomeServer/blob/main/pictures/container-diagram.png?raw=true)
-
-_My currently existing containers visualized via excalidraw._
-
-
-## Deploy
-
-1. Load your environment file and export variables:
-
-```bash
-set -a
-source .env
-set +a
+```text
+modules/platform/          Cluster foundations and shared controllers
+modules/identity/          Identity-service modules
+modules/applications/      End-user application modules
+modules/shared/            Reusable cross-service modules
+live/homelab/platform/     Platform Terragrunt units
+live/homelab/identity/     Authentik Terragrunt units
+live/homelab/applications/ Application Terragrunt units
+secrets/                   Values-only SOPS inputs by ownership boundary
+docs/                      Architecture and operating procedures
+root.hcl                   Shared providers and local-state placement
 ```
 
-Provider auth options (from `.env`):
-- API token auth: `PM_API_TOKEN_ID` + `PM_API_TOKEN_SECRET`
-- Username/password auth: `PM_USERNAME` + `PM_PASSWORD` (takes precedence when both are set)
+Terragrunt uses descriptive unit names and derives ordering from dependencies.
+Local state is stored under the gitignored `.terragrunt-state` directory, never
+inside `.terragrunt-cache`.
 
-For secrets with shell characters (for example `$`), prefer single quotes in `.env` values so `source .env` loads them literally.
+## Start here
 
-Also set `LXC_PASSWORD` and storage/SSH values as needed.
-2. Apply shared storage:
+1. Read [prerequisites](docs/prerequisites.md).
+2. Prepare [Cloudflare and AdGuard](docs/cloudflare-and-adguard.md).
+3. Prepare [TrueNAS](docs/truenas.md).
+4. Review and rotate [SOPS secrets](secrets/README.md).
+5. Follow the [deployment guide](docs/deployment.md).
+6. Read the [risk review](docs/implementation-review.md) and
+   [disaster-recovery guide](docs/disaster-recovery.md).
 
-```bash
-terragrunt apply --working-dir live/pve1/storage/media
-terragrunt apply --working-dir live/pve1/storage/appdata
-```
+The approved architecture is recorded in the
+[design specification](docs/superpowers/specs/2026-08-11-homelab-kubernetes-platform-design.md).
 
-3. Apply containers:
-
-```bash
-terragrunt run --all apply --queue-include-external --working-dir live/pve1/containers
-```
-
-For one service only:
-
-```bash
-terragrunt apply --working-dir live/pve1/containers/<service>
-```
-
-## Repository map
-
-- `live/`: environment stacks (what is deployed)
-- `modules/`: reusable Terraform modules (how resources are provisioned)
-- `nix/`: service-level NixOS flakes (how services are configured)
-- `scripts/`: deployment helpers
+Nothing is committed or applied automatically. The normal workflow is
+`terragrunt plan`, review, then `terragrunt apply` in the selected unit.
