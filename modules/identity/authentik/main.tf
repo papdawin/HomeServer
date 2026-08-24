@@ -53,11 +53,29 @@ resource "helm_release" "authentik" {
       }
     }
     server = {
-      replicas                     = 1
+      replicas                     = 2
       serviceAccountName           = kubernetes_service_account_v1.authentik.metadata[0].name
       automountServiceAccountToken = false
-      nodeSelector = {
-        "kubernetes.io/hostname" = "talos2"
+      affinity = {
+        podAntiAffinity = {
+          requiredDuringSchedulingIgnoredDuringExecution = [{
+            labelSelector = {
+              matchLabels = {
+                "app.kubernetes.io/component" = "server"
+                "app.kubernetes.io/instance"  = "authentik"
+                "app.kubernetes.io/name"      = "authentik"
+              }
+            }
+            topologyKey = "kubernetes.io/hostname"
+          }]
+        }
+      }
+      deploymentStrategy = {
+        type = "RollingUpdate"
+        rollingUpdate = {
+          maxSurge       = 0
+          maxUnavailable = 1
+        }
       }
       ingress = {
         enabled = false
@@ -158,6 +176,22 @@ resource "helm_release" "authentik" {
   })]
 
   depends_on = [kubernetes_service_account_v1.authentik]
+}
+
+# Host-networked Traefik must choose its local Authentik replica: a remote
+# request has Cilium's reserved remote-node identity, not the Pod identity.
+resource "kubectl_manifest" "authentik_server_service" {
+  yaml_body = yamlencode({
+    apiVersion = "v1"
+    kind       = "Service"
+    metadata   = { name = "authentik-server", namespace = var.namespace }
+    spec       = { internalTrafficPolicy = "Local" }
+  })
+
+  server_side_apply = true
+  force_conflicts   = true
+  field_manager     = "terraform-authentik"
+  depends_on        = [helm_release.authentik]
 }
 
 resource "kubectl_manifest" "route" {

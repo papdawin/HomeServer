@@ -26,10 +26,6 @@ variable "secret_revision" {
   type = number
 }
 
-variable "machine_learning_node" {
-  type = string
-}
-
 variable "namespace" {
   type    = string
   default = "immich"

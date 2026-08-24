@@ -21,7 +21,6 @@ inputs = {
   chart_version         = local.environment.locals.immich_chart_version
   image_version         = local.environment.locals.immich_image_version
   domain                = local.environment.locals.domain
-  machine_learning_node = local.environment.locals.control_plane_node
   oidc_client_id        = local.authentik_secrets.immich_oidc_client_id
   oidc_client_secret    = local.authentik_secrets.immich_oidc_client_secret
   secret_revision       = local.authentik_secret_revision

@@ -47,8 +47,8 @@ resource "kubernetes_secret_v1" "configuration" {
 }
 
 resource "helm_release" "immich" {
-  name       = "immich"
-  namespace  = var.namespace
+  name      = "immich"
+  namespace = var.namespace
   # Vendored because this chart's remote JSON-schema reference breaks the
   # Helm provider's dry-run validation. Chart version remains pinned here.
   chart = "${path.module}/charts/immich"
@@ -185,38 +185,8 @@ resource "helm_release" "immich" {
         }
       }
     }
-    "machine-learning" = {
-      enabled = false
-      controllers = {
-        main = {
-          pod = {
-            nodeSelector = {
-              "kubernetes.io/hostname" = var.machine_learning_node
-            }
-          }
-          containers = {
-            main = {
-              resources = {
-                requests = {
-                  cpu    = "500m"
-                  memory = "1Gi"
-                }
-                limits = {
-                  cpu    = "4"
-                  memory = "4Gi"
-                }
-              }
-            }
-          }
-        }
-      }
-      persistence = {
-        cache = {
-          enabled = true
-          type    = "emptyDir"
-        }
-      }
-    }
+    # Keep explicit so a chart update cannot re-enable this resource-heavy component.
+    "machine-learning" = { enabled = false }
   })]
 
   lifecycle {

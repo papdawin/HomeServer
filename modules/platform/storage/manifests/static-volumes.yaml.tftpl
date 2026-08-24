@@ -245,3 +245,96 @@ spec:
   volumeName: hermes-home
   resources:
     requests: {storage: 20Gi}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: octoprint-config
+spec:
+  capacity: {storage: 20Gi}
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: [hard, nfsvers=4.1, noatime]
+  nfs:
+    server: ${truenas_address}
+    path: /mnt/HDD/appdata/octoprint
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: octoprint-config
+    namespace: octoprint
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: octoprint-config
+  namespace: octoprint
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: ""
+  volumeName: octoprint-config
+  resources:
+    requests: {storage: 20Gi}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: bambustudio-config
+spec:
+  capacity: {storage: 20Gi}
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: [hard, nfsvers=4.1, noatime]
+  nfs:
+    server: ${truenas_address}
+    path: /mnt/HDD/appdata/bambustudio
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: bambustudio-config
+    namespace: bambustudio
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bambustudio-config
+  namespace: bambustudio
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: ""
+  volumeName: bambustudio-config
+  resources:
+    requests: {storage: 20Gi}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: homeassistant-config
+spec:
+  capacity: {storage: 20Gi}
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions: [hard, nfsvers=4.1, noatime]
+  nfs:
+    server: ${truenas_address}
+    path: /mnt/HDD/appdata/homeassistant
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: homeassistant-config
+    namespace: homeassistant
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: homeassistant-config
+  namespace: homeassistant
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: ""
+  volumeName: homeassistant-config
+  resources:
+    requests: {storage: 20Gi}

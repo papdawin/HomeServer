@@ -11,11 +11,10 @@ terraform {
 }
 
 dependencies {
-  paths = ["../../platform/foundation", "../../identity/authentik", "../../platform/traefik", "../../platform/storage"]
+  paths = ["../../platform/foundation", "../../platform/traefik", "../../platform/storage"]
 }
 
 inputs = {
-  namespace     = "hermes"
-  domain        = local.environment.locals.domain
-  authentik_url = "https://auth.${local.environment.locals.domain}"
+  namespace = "hermes"
+  domain    = local.environment.locals.domain
 }

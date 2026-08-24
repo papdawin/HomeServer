@@ -99,13 +99,14 @@ resource "authentik_outpost" "embedded" {
 
 locals {
   arr_apps = {
-    qbittorrent = "qBittorrent"
-    radarr      = "Radarr"
-    sonarr      = "Sonarr"
-    seerr       = "Seerr"
-    jellyfin    = "Jellyfin"
-    prowlarr    = "Prowlarr"
-    hermes      = "Hermes"
+    qbittorrent   = "qBittorrent"
+    radarr        = "Radarr"
+    sonarr        = "Sonarr"
+    seerr         = "Seerr"
+    jellyfin      = "Jellyfin"
+    prowlarr      = "Prowlarr"
+    bambustudio   = "Bambu Studio"
+    homeassistant = "Home Assistant"
   }
 }
 

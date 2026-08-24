@@ -3,17 +3,6 @@ locals {
   labels   = { "app.kubernetes.io/part-of" = "hermes", "app.kubernetes.io/managed-by" = "terraform" }
 
   manifests = {
-    middleware = yamlencode({
-      apiVersion = "traefik.io/v1alpha1"
-      kind       = "Middleware"
-      metadata   = { name = "authentik", namespace = var.namespace, labels = local.labels }
-      spec = { forwardAuth = {
-        address             = "http://authentik-server.authentik.svc.cluster.local/outpost.goauthentik.io/auth/traefik"
-        trustForwardHeader  = true
-        authResponseHeaders = ["X-authentik-username", "X-authentik-groups", "X-authentik-email", "X-authentik-name", "X-authentik-uid", "X-authentik-jwt"]
-        authSigninURL       = "${var.authentik_url}/outpost.goauthentik.io/start?rd={url}"
-      } }
-    })
     source-init = yamlencode({
       apiVersion = "apps/v1"
       kind       = "Deployment"
@@ -54,6 +43,7 @@ locals {
                   { name = "HERMES_WEBUI_STATE_DIR", value = "/home/hermeswebui/.hermes/webui" },
                   { name = "WANTED_UID", value = "3004" }, { name = "WANTED_GID", value = "3004" },
                   { name = "HERMES_WEBUI_SECURE", value = "1" }, { name = "HERMES_WEBUI_TRUST_FORWARDED_HOST", value = "1" }, { name = "HERMES_WEBUI_TRUST_FORWARDED_PROTO", value = "1" },
+
                   { name = "HERMES_WEBUI_ALLOWED_ORIGINS", value = "https://${local.hostname}" },
                   { name = "HERMES_WEBUI_AGENT_CACHE_MAX", value = "3" }, { name = "HERMES_WEBUI_SESSIONS_MAX", value = "25" }
                 ]
@@ -70,7 +60,7 @@ locals {
       }
     })
     service = yamlencode({ apiVersion = "v1", kind = "Service", metadata = { name = "hermes-webui", namespace = var.namespace, labels = local.labels }, spec = { selector = { app = "hermes" }, ports = [{ name = "http", port = 8787, targetPort = "http" }] } })
-    route   = yamlencode({ apiVersion = "traefik.io/v1alpha1", kind = "IngressRoute", metadata = { name = "hermes", namespace = var.namespace, labels = local.labels }, spec = { entryPoints = ["websecure"], routes = [{ kind = "Rule", match = "Host(`${local.hostname}`)", middlewares = [{ name = "authentik" }], services = [{ name = "hermes-webui", port = 8787 }] }], tls = {} } })
+    route   = yamlencode({ apiVersion = "traefik.io/v1alpha1", kind = "IngressRoute", metadata = { name = "hermes", namespace = var.namespace, labels = local.labels }, spec = { entryPoints = ["websecure"], routes = [{ kind = "Rule", match = "Host(`${local.hostname}`)", services = [{ name = "hermes-webui", port = 8787 }] }], tls = {} } })
   }
 }
 
