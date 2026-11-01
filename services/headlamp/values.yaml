@@ -1,0 +1,95 @@
+fullnameOverride: headlamp
+
+replicaCount: 1
+
+image:
+  registry: ghcr.io
+  repository: headlamp-k8s/headlamp
+  tag: v0.46.0
+  pullPolicy: IfNotPresent
+
+config:
+  inCluster: true
+  inClusterContextName: main
+  unsafeUseServiceAccountToken: true
+  sessionTTL: 86400
+
+podSecurityContext:
+  fsGroup: 101
+  fsGroupChangePolicy: OnRootMismatch
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+  seccompProfile:
+    type: RuntimeDefault
+  runAsNonRoot: true
+  runAsUser: 100
+  runAsGroup: 101
+
+serviceAccount:
+  create: true
+  name: headlamp
+
+automountServiceAccountToken: true
+
+clusterRoleBinding:
+  create: true
+  clusterRoleName: headlamp-readonly
+
+service:
+  type: ClusterIP
+  port: 80
+
+persistentVolumeClaim:
+  enabled: true
+  accessModes:
+    - ReadWriteOnce
+  size: 50Gi
+  storageClassName: qnap-iscsi-static
+  volumeMode: Filesystem
+
+volumeMounts:
+  - name: headlamp-data
+    mountPath: /home/headlamp/.config/Headlamp
+
+volumes:
+  - name: headlamp-data
+    persistentVolumeClaim:
+      claimName: headlamp
+
+nodeSelector:
+  kubernetes.io/hostname: talos-cp-1
+
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-redirect-to-https@kubernetescrd,traefik-security-headers@kubernetescrd,arrsuite-authentik-forward-auth@kubernetescrd
+  hosts:
+    - host: headlamp.home.papdavid.eu
+      paths:
+        - path: /
+          type: Prefix
+  tls:
+    - secretName: home-papdavid-eu-wildcard-tls
+      hosts:
+        - headlamp.home.papdavid.eu

@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: arrsuite-jellyfin-config
+  labels:
+    app.kubernetes.io/part-of: arrsuite
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: arrsuite-jellyfin-nfs
+  mountOptions: [vers=4.1, hard, noatime]
+  nfs:
+    server: 192.168.68.6
+    path: /application-state/preparr-jellyfin-config-pvc-b7a13b9a-ff84-4652-8ca3-cf5c07746e3e
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-config
+  namespace: arrsuite
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: arrsuite-jellyfin-nfs
+  volumeName: arrsuite-jellyfin-config
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: arrsuite-jellyfin-cache
+  labels:
+    app.kubernetes.io/part-of: arrsuite
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: arrsuite-jellyfin-nfs
+  mountOptions: [vers=4.1, hard, noatime]
+  nfs:
+    server: 192.168.68.6
+    path: /application-state/preparr-jellyfin-cache-pvc-4b7b23a9-6adb-4720-b093-c6ef6a925f06
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-cache
+  namespace: arrsuite
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: arrsuite-jellyfin-nfs
+  volumeName: arrsuite-jellyfin-cache
+  resources:
+    requests:
+      storage: 20Gi

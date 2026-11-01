@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata: {name: sonarr, namespace: arrsuite}
+spec: {selector: {app.kubernetes.io/name: sonarr}, ports: [{name: http, port: 8989, targetPort: http}]}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: radarr, namespace: arrsuite}
+spec: {selector: {app.kubernetes.io/name: radarr}, ports: [{name: http, port: 7878, targetPort: http}]}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: prowlarr, namespace: arrsuite}
+spec: {selector: {app.kubernetes.io/name: prowlarr}, ports: [{name: http, port: 9696, targetPort: http}]}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: qbittorrent, namespace: arrsuite}
+spec: {selector: {app.kubernetes.io/name: qbittorrent}, ports: [{name: http, port: 8080, targetPort: http}, {name: torrent-tcp, port: 6881, targetPort: torrent-tcp}, {name: torrent-udp, port: 6881, targetPort: torrent-udp, protocol: UDP}]}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: bazarr, namespace: arrsuite}
+spec: {selector: {app.kubernetes.io/name: bazarr}, ports: [{name: http, port: 6767, targetPort: http}]}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: seerr, namespace: arrsuite}
+spec: {selector: {app.kubernetes.io/name: seerr}, ports: [{name: http, port: 5055, targetPort: http}]}

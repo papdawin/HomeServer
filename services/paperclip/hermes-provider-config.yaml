@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hermes-provider-config
+  namespace: paperclip
+data:
+  config.yaml: |
+    model:
+      provider: openai-codex
+      default: gpt-5.6-luna
+      base_url: https://chatgpt.com/backend-api/codex

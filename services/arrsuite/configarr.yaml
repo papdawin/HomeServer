@@ -1,0 +1,328 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configarr
+  namespace: arrsuite
+data:
+  config.yml: |
+    trashGuideUrl: https://github.com/TRaSH-Guides/Guides
+    recyclarrConfigUrl: https://github.com/recyclarr/config-templates
+    sonarr:
+      series:
+        base_url: !env SONARR_URL
+        api_key: !env SONARR_API_KEY
+        quality_definition:
+          type: series
+        include:
+          - template: sonarr-quality-definition-series
+        renameQualityProfiles:
+          - from: HD 1080p Preferred
+            to: HD
+          - from: 4K 2160p Preferred
+            to: Ultra HD
+        delete_unmanaged_quality_profiles:
+          enabled: true
+          ignore: []
+        quality_profiles:
+          - name: HD
+            language: Any
+            min_format_score: 0
+            quality_sort: top
+            upgrade:
+              allowed: true
+              until_quality: WEBDL-1080p
+              until_score: 1000
+              min_format_score: 1000
+            qualities:
+              - {name: WEBDL-2160p}
+              - {name: WEBRip-2160p}
+              - {name: HDTV-2160p}
+              - {name: Bluray-1080p}
+              - {name: WEBDL-1080p}
+              - {name: WEBRip-1080p}
+              - {name: Raw-HD}
+              - {name: HDTV-1080p}
+              - {name: Bluray-720p}
+              - {name: WEBDL-720p}
+              - {name: WEBRip-720p}
+              - {name: HDTV-720p}
+              - {name: Bluray-576p}
+              - {name: Bluray-480p}
+              - {name: WEBDL-480p}
+              - {name: WEBRip-480p}
+              - {name: DVD}
+              - {name: SDTV}
+
+          - name: Ultra HD
+            language: Any
+            min_format_score: 0
+            quality_sort: top
+            upgrade:
+              allowed: true
+              until_quality: WEBDL-2160p
+              until_score: 1000
+              min_format_score: 1000
+            qualities:
+              - {name: WEBDL-2160p}
+              - {name: WEBRip-2160p}
+              - {name: HDTV-2160p}
+              - {name: Bluray-1080p}
+              - {name: WEBDL-1080p}
+              - {name: WEBRip-1080p}
+              - {name: Raw-HD}
+              - {name: HDTV-1080p}
+              - {name: Bluray-720p}
+              - {name: WEBDL-720p}
+              - {name: WEBRip-720p}
+              - {name: HDTV-720p}
+              - {name: Bluray-576p}
+              - {name: Bluray-480p}
+              - {name: WEBDL-480p}
+              - {name: WEBRip-480p}
+              - {name: DVD}
+              - {name: SDTV}
+
+        download_clients:
+          update_password: true
+          data:
+            - name: qBittorrent
+              type: qbittorrent
+              enable: true
+              priority: 1
+              remove_completed_downloads: true
+              remove_failed_downloads: true
+              fields:
+                host: qbittorrent
+                port: 8080
+                use_ssl: false
+                url_base: /
+                username: !env QBITTORRENT_USERNAME
+                password: !env QBITTORRENT_PASSWORD
+                tv_category: sonarr
+                tv_imported_category: ""
+          config:
+            enable_completed_download_handling: true
+          remote_paths:
+            - host: qbittorrent
+              remote_path: /media/downloads/complete
+              local_path: /downloads
+            - host: qbittorrent
+              remote_path: /downloads/sonarr
+              local_path: /downloads
+    radarr:
+      instance1:
+        base_url: !env RADARR_URL
+        api_key: !env RADARR_API_KEY
+        quality_definition:
+          type: movie
+        include:
+          - template: radarr-quality-definition-movie
+        renameQualityProfiles:
+          - from: HD 1080p Preferred
+            to: HD
+          - from: 4K 2160p Preferred
+            to: Ultra HD
+        delete_unmanaged_quality_profiles:
+          enabled: true
+          ignore: []
+        quality_profiles:
+          - name: HD
+            language: Any
+            min_format_score: 0
+            quality_sort: top
+            upgrade:
+              allowed: true
+              until_quality: WEBDL-1080p
+              until_score: 1000
+              min_format_score: 1000
+            qualities:
+              - {name: WEBDL-2160p}
+              - {name: WEBRip-2160p}
+              - {name: HDTV-2160p}
+              - {name: Bluray-1080p}
+              - {name: WEBDL-1080p}
+              - {name: WEBRip-1080p}
+              - {name: Raw-HD}
+              - {name: HDTV-1080p}
+              - {name: Bluray-720p}
+              - {name: WEBDL-720p}
+              - {name: WEBRip-720p}
+              - {name: HDTV-720p}
+              - {name: Bluray-576p}
+              - {name: Bluray-480p}
+              - {name: WEBDL-480p}
+              - {name: WEBRip-480p}
+              - {name: DVD}
+              - {name: SDTV}
+
+          - name: Ultra HD
+            language: Any
+            min_format_score: 0
+            quality_sort: top
+            upgrade:
+              allowed: true
+              until_quality: WEBDL-2160p
+              until_score: 1000
+              min_format_score: 1000
+            qualities:
+              - {name: WEBDL-2160p}
+              - {name: WEBRip-2160p}
+              - {name: HDTV-2160p}
+              - {name: Bluray-1080p}
+              - {name: WEBDL-1080p}
+              - {name: WEBRip-1080p}
+              - {name: Raw-HD}
+              - {name: HDTV-1080p}
+              - {name: Bluray-720p}
+              - {name: WEBDL-720p}
+              - {name: WEBRip-720p}
+              - {name: HDTV-720p}
+              - {name: Bluray-576p}
+              - {name: Bluray-480p}
+              - {name: WEBDL-480p}
+              - {name: WEBRip-480p}
+              - {name: DVD}
+              - {name: SDTV}
+
+        download_clients:
+          update_password: true
+          data:
+            - name: qBittorrent
+              type: qbittorrent
+              enable: true
+              priority: 1
+              remove_completed_downloads: true
+              remove_failed_downloads: true
+              fields:
+                host: qbittorrent
+                port: 8080
+                use_ssl: false
+                url_base: /
+                username: !env QBITTORRENT_USERNAME
+                password: !env QBITTORRENT_PASSWORD
+                movie_category: radarr
+                movie_imported_category: ""
+          config:
+            enable_completed_download_handling: true
+          remote_paths:
+            - host: qbittorrent
+              remote_path: /media/downloads/complete
+              local_path: /downloads
+            - host: qbittorrent
+              remote_path: /downloads/radarr
+              local_path: /downloads
+    prowlarrEnabled: true
+    prowlarr:
+      main:
+        base_url: http://prowlarr:9696
+        api_key: !env PROWLARR_API_KEY
+        applications:
+          data:
+            - name: Sonarr
+              type: Sonarr
+              sync_level: fullSync
+              fields:
+                prowlarrUrl: http://prowlarr:9696
+                baseUrl: http://sonarr:8989
+                apiKey: !env SONARR_API_KEY
+                syncCategories: [5000, 5010, 5020, 5030, 5040, 5045, 5050]
+            - name: Radarr
+              type: Radarr
+              sync_level: fullSync
+              fields:
+                prowlarrUrl: http://prowlarr:9696
+                baseUrl: http://radarr:7878
+                apiKey: !env RADARR_API_KEY
+                syncCategories: [2000, 2010, 2020, 2030, 2040, 2045, 2050]
+          delete_unmanaged:
+            enabled: false
+          sync_indexers: true
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: configarr
+  namespace: arrsuite
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: configarr
+            app.kubernetes.io/part-of: arrsuite
+        spec:
+          restartPolicy: OnFailure
+          automountServiceAccountToken: false
+          tolerations:
+            - {key: node-role.kubernetes.io/control-plane, operator: Exists, effect: NoSchedule}
+            - {key: node-role.kubernetes.io/master, operator: Exists, effect: NoSchedule}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: configarr
+              image: ghcr.io/raydak-labs/configarr:1.35.0
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: [ALL]
+              resources:
+                requests: {cpu: 50m, memory: 128Mi}
+                limits: {cpu: 500m, memory: 512Mi}
+              env:
+                - name: SONARR_URL
+                  value: http://sonarr:8989
+                - name: RADARR_URL
+                  value: http://radarr:7878
+                - name: SONARR_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: arrsuite-master
+                      key: sonarr-api-key
+                - name: RADARR_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: arrsuite-master
+                      key: radarr-api-key
+                - name: PROWLARR_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: arrsuite-master
+                      key: prowlarr-api-key
+                - name: QBITTORRENT_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: arrsuite-master
+                      key: username
+                - name: QBITTORRENT_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: arrsuite-master
+                      key: password
+              volumeMounts:
+                - name: config-dir
+                  mountPath: /app/config
+                - name: repos
+                  mountPath: /app/repos
+                - name: config
+                  mountPath: /app/config/config.yml
+                  subPath: config.yml
+                  readOnly: true
+          volumes:
+            - name: config-dir
+              emptyDir: {}
+            - name: repos
+              emptyDir: {}
+            - name: config
+              configMap:
+                name: configarr

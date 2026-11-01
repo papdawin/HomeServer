@@ -1,0 +1,216 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: powerdns
+  namespace: powerdns
+  labels:
+    app: powerdns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: powerdns
+  template:
+    metadata:
+      labels:
+        app: powerdns
+    spec:
+      dnsPolicy: ClusterFirst
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: powerdns
+        image: pschiffe/pdns-pgsql:5.0-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: dns-udp
+          containerPort: 53
+          protocol: UDP
+        - name: dns-tcp
+          containerPort: 53
+          protocol: TCP
+        - name: api
+          containerPort: 8081
+          protocol: TCP
+        env:
+        - name: PDNS_launch
+          value: gpgsql
+        - name: PDNS_gpgsql_host
+          value: postgres-rw.postgres.svc.cluster.local
+        - name: PDNS_gpgsql_port
+          value: '5432'
+        - name: PDNS_gpgsql_dbname
+          value: powerdns
+        - name: PDNS_gpgsql_user
+          value: powerdns
+        - name: PDNS_gpgsql_password
+          valueFrom:
+            secretKeyRef:
+              name: powerdns-postgres
+              key: password
+        - name: PDNS_api
+          value: 'yes'
+        - name: PDNS_api_key
+          valueFrom:
+            secretKeyRef:
+              name: powerdns-secrets
+              key: api-key
+        - name: PDNS_webserver
+          value: 'yes'
+        - name: PDNS_webserver_address
+          value: 0.0.0.0
+        - name: PDNS_webserver_allow_from
+          value: 0.0.0.0/0
+        - name: PDNS_webserver_port
+          value: '8081'
+        - name: PDNS_version_string
+          value: anonymous
+        - name: PDNS_default_ttl
+          value: '300'
+        readinessProbe:
+          tcpSocket:
+            port: 53
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 53
+          initialDelaySeconds: 15
+          periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: powerdns-recursor
+  namespace: powerdns
+  labels:
+    app: powerdns-recursor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: powerdns-recursor
+  template:
+    metadata:
+      labels:
+        app: powerdns-recursor
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: recursor
+        image: pschiffe/pdns-recursor:5.0-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: dns-udp
+          containerPort: 53
+          protocol: UDP
+        - name: dns-tcp
+          containerPort: 53
+          protocol: TCP
+        env:
+        - name: PDNS_local_address
+          value: 0.0.0.0
+        - name: PDNS_local_port
+          value: '53'
+        - name: PDNS_allow_from
+          value: 0.0.0.0/0
+        - name: PDNS_forward_zones
+          value: papdavid.eu=10.101.67.232:53
+        - name: PDNS_dont_query
+          value: 127.0.0.0/8,169.254.0.0/16,224.0.0.0/4,240.0.0.0/4,::1/128,fe80::/10,ff00::/8
+        - name: PDNS_forward_zones_recurse
+          value: .=1.1.1.1
+        - name: PDNS_dnssec
+          value: 'off'
+        readinessProbe:
+          tcpSocket:
+            port: dns-udp
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: dns-udp
+          initialDelaySeconds: 15
+          periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: powerdns-admin
+  namespace: powerdns
+  labels:
+    app: powerdns-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: powerdns-admin
+  template:
+    metadata:
+      labels:
+        app: powerdns-admin
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: powerdns-admin
+        image: powerdnsadmin/pda-legacy:v2026.08.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: BIND_ADDRESS
+          value: 0.0.0.0
+        - name: PORT
+          value: '80'
+        - name: DATABASE_DRIVER
+          value: postgres
+        - name: DATABASE_USER
+          value: powerdnsadmin
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: powerdns-admin-secrets
+              key: database-password
+        - name: DATABASE_HOST
+          value: postgres-rw.postgres.svc.cluster.local
+        - name: DATABASE_PORT
+          value: '5432'
+        - name: DATABASE_NAME
+          value: powerdnsadmin
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: powerdns-admin-secrets
+              key: secret-key
+        - name: PDNS_API_URL
+          value: http://powerdns-api.powerdns.svc.cluster.local:8081
+        - name: PDNS_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: powerdns-admin-secrets
+              key: pdns-api-key
+        - name: PDNS_VERSION
+          value: '5.0'
+        - name: SIGNUP_ENABLED
+          value: 'True'
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 20

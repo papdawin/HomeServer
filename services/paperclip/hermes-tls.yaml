@@ -1,0 +1,82 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: paperclip-hermes-selfsigned
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: paperclip-hermes-ca
+  namespace: paperclip
+spec:
+  isCA: true
+  commonName: paperclip-hermes-internal-ca
+  secretName: paperclip-hermes-ca
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  issuerRef:
+    name: paperclip-hermes-selfsigned
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: paperclip-hermes-ca
+  namespace: paperclip
+spec:
+  ca:
+    secretName: paperclip-hermes-ca
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: paperclip-hermes-gateways
+  namespace: paperclip
+spec:
+  secretName: paperclip-hermes-gateways-tls
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  dnsNames:
+    - '*.paperclip.svc.cluster.local'
+    - '*.paperclip.svc'
+  issuerRef:
+    name: paperclip-hermes-ca
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hermes-tls-proxy
+  namespace: paperclip
+data:
+  nginx.conf: |
+    pid /tmp/nginx.pid;
+    events {}
+    http {
+      client_body_temp_path /tmp/client_temp;
+      proxy_temp_path /tmp/proxy_temp;
+      fastcgi_temp_path /tmp/fastcgi_temp;
+      uwsgi_temp_path /tmp/uwsgi_temp;
+      scgi_temp_path /tmp/scgi_temp;
+      server {
+        listen 8643 ssl;
+        ssl_certificate /etc/hermes-tls/tls.crt;
+        ssl_certificate_key /etc/hermes-tls/tls.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_session_cache shared:TLS:10m;
+        location / {
+          proxy_pass http://127.0.0.1:8642;
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header Authorization $http_authorization;
+          proxy_set_header X-Forwarded-Proto https;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+      }
+    }

@@ -1,9 +1,0 @@
-machine:
-  kubelet:
-    extraArgs:
-      feature-gates: ImageVolume=true
-
-cluster:
-  apiServer:
-    extraArgs:
-      feature-gates: ImageVolume=true

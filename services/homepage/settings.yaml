@@ -1,0 +1,15 @@
+title: Home Server
+description: Home services
+theme: dark
+color: slate
+statusStyle: dot
+layout:
+  Photos:
+    style: row
+    columns: 1
+  Cinema:
+    style: row
+    columns: 3
+  Infrastructure:
+    style: row
+    columns: 3

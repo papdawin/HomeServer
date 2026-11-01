@@ -1,0 +1,178 @@
+# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+version: 1
+metadata:
+  name: arrsuite-forward-auth
+  labels:
+    blueprints.goauthentik.io/instantiate: "true"
+entries:
+  - model: authentik_providers_proxy.proxyprovider
+    id: sonarr-provider
+    identifiers:
+      name: sonarr-forward-auth
+    attrs:
+      name: sonarr-forward-auth
+      mode: forward_single
+      external_host: https://sonarr.home.papdavid.eu
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+  - model: authentik_core.application
+    id: sonarr-application
+    identifiers:
+      slug: sonarr
+    attrs:
+      name: Sonarr
+      provider: !KeyOf sonarr-provider
+  - model: authentik_providers_proxy.proxyprovider
+    id: radarr-provider
+    identifiers:
+      name: radarr-forward-auth
+    attrs:
+      name: radarr-forward-auth
+      mode: forward_single
+      external_host: https://radarr.home.papdavid.eu
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+  - model: authentik_core.application
+    id: radarr-application
+    identifiers:
+      slug: radarr
+    attrs:
+      name: Radarr
+      provider: !KeyOf radarr-provider
+  - model: authentik_providers_proxy.proxyprovider
+    id: prowlarr-provider
+    identifiers:
+      name: prowlarr-forward-auth
+    attrs:
+      name: prowlarr-forward-auth
+      mode: forward_single
+      external_host: https://prowlarr.home.papdavid.eu
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+  - model: authentik_core.application
+    id: prowlarr-application
+    identifiers:
+      slug: prowlarr
+    attrs:
+      name: Prowlarr
+      provider: !KeyOf prowlarr-provider
+  - model: authentik_providers_proxy.proxyprovider
+    id: qbittorrent-provider
+    identifiers:
+      name: qbittorrent-forward-auth
+    attrs:
+      name: qbittorrent-forward-auth
+      mode: forward_single
+      external_host: https://qbittorrent.home.papdavid.eu
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+  - model: authentik_core.application
+    id: qbittorrent-application
+    identifiers:
+      slug: qbittorrent
+    attrs:
+      name: qBittorrent
+      provider: !KeyOf qbittorrent-provider
+  - model: authentik_providers_proxy.proxyprovider
+    id: bazarr-provider
+    identifiers:
+      name: bazarr-forward-auth
+    attrs:
+      name: bazarr-forward-auth
+      mode: forward_single
+      external_host: https://bazarr.home.papdavid.eu
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+  - model: authentik_core.application
+    id: bazarr-application
+    identifiers:
+      slug: bazarr
+    attrs:
+      name: Bazarr
+      provider: !KeyOf bazarr-provider
+  - model: authentik_providers_proxy.proxyprovider
+    id: jellyfin-provider
+    identifiers:
+      name: jellyfin-forward-auth
+    attrs:
+      name: jellyfin-forward-auth
+      mode: forward_single
+      external_host: https://jellyfin.home.papdavid.eu
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+  - model: authentik_core.application
+    id: jellyfin-application
+    identifiers:
+      slug: jellyfin
+    attrs:
+      name: Jellyfin
+      provider: !KeyOf jellyfin-provider
+  - model: authentik_providers_proxy.proxyprovider
+    id: seerr-provider
+    identifiers:
+      name: seerr-forward-auth
+    attrs:
+      name: seerr-forward-auth
+      mode: forward_single
+      external_host: https://seerr.home.papdavid.eu
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+  - model: authentik_core.application
+    id: seerr-application
+    identifiers:
+      slug: seerr
+    attrs:
+      name: Seerr
+      provider: !KeyOf seerr-provider
+  - model: authentik_providers_proxy.proxyprovider
+    id: headlamp-provider
+    identifiers:
+      name: headlamp-forward-auth
+    attrs:
+      name: headlamp-forward-auth
+      mode: forward_single
+      external_host: https://headlamp.home.papdavid.eu
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+  - model: authentik_core.application
+    id: headlamp-application
+    identifiers:
+      slug: headlamp
+    attrs:
+      name: Headlamp
+      provider: !KeyOf headlamp-provider
+  - model: authentik_providers_proxy.proxyprovider
+    id: paperclip-provider
+    identifiers:
+      name: paperclip-forward-auth
+    attrs:
+      name: paperclip-forward-auth
+      mode: forward_single
+      external_host: https://paperclip.home.papdavid.eu
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+  - model: authentik_core.application
+    id: paperclip-application
+    identifiers:
+      slug: paperclip
+    attrs:
+      name: Paperclip
+      provider: !KeyOf paperclip-provider
+  - model: authentik_outposts.outpost
+    id: embedded-outpost
+    identifiers:
+      name: authentik Embedded Outpost
+    attrs:
+      config:
+        authentik_host: https://auth.home.papdavid.eu
+        authentik_host_browser: https://auth.home.papdavid.eu
+      providers:
+        - !KeyOf sonarr-provider
+        - !KeyOf radarr-provider
+        - !KeyOf prowlarr-provider
+        - !KeyOf qbittorrent-provider
+        - !KeyOf bazarr-provider
+        - !KeyOf jellyfin-provider
+        - !KeyOf seerr-provider
+        - !KeyOf headlamp-provider
+        - !KeyOf paperclip-provider

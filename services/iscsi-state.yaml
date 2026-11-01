@@ -1,0 +1,115 @@
+# Three logical iSCSI storage units on the QNAP non-redundant volume.
+#
+# arrsuite-state filesystem layout:
+#   /sonarr /radarr /prowlarr /bazarr /qbittorrent /seerr /jellyfin
+#
+# home-state filesystem layout:
+#   /homeassistant /immich /dashboard
+#
+# work-state is intentionally unclaimed and empty.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qnap-iscsi-arrsuite
+  labels:
+    app.kubernetes.io/part-of: storage
+    storage.homeserver/role: arrsuite
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: qnap-iscsi-static
+  volumeMode: Filesystem
+  csi:
+    driver: iscsi.csi.k8s.io
+    fsType: ext4
+    volumeHandle: qnap-iscsi-arrsuite
+    volumeAttributes:
+      targetPortal: 192.168.68.6:3260
+      portals: '["192.168.68.6:3260"]'
+      iqn: iqn.2004-04.com.qnap:ts-451plus:iscsi.jellyfin-config.f840af
+      lun: "0"
+      discovery: "true"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: arrsuite-state
+  namespace: arrsuite
+  labels:
+    app.kubernetes.io/part-of: storage
+    storage.homeserver/role: arrsuite
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: qnap-iscsi-static
+  volumeName: qnap-iscsi-arrsuite
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qnap-iscsi-home
+  labels:
+    app.kubernetes.io/part-of: storage
+    storage.homeserver/role: home
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: qnap-iscsi-static
+  volumeMode: Filesystem
+  csi:
+    driver: iscsi.csi.k8s.io
+    fsType: ext4
+    volumeHandle: qnap-iscsi-home
+    volumeAttributes:
+      targetPortal: 192.168.68.6:3260
+      portals: '["192.168.68.6:3260"]'
+      iqn: iqn.2004-04.com.qnap:ts-451plus:iscsi.jellyfin-config.f840af
+      lun: "2"
+      discovery: "true"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: home-state
+  namespace: homeassistant
+  labels:
+    app.kubernetes.io/part-of: storage
+    storage.homeserver/role: home
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: qnap-iscsi-static
+  volumeName: qnap-iscsi-home
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qnap-iscsi-work
+  labels:
+    app.kubernetes.io/part-of: storage
+    storage.homeserver/role: work
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: qnap-iscsi-static
+  volumeMode: Filesystem
+  csi:
+    driver: iscsi.csi.k8s.io
+    fsType: ext4
+    volumeHandle: qnap-iscsi-work
+    volumeAttributes:
+      targetPortal: 192.168.68.6:3260
+      portals: '["192.168.68.6:3260"]'
+      iqn: iqn.2004-04.com.qnap:ts-451plus:iscsi.jellyfin-config.f840af
+      lun: "3"
+      discovery: "true"

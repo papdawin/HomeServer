@@ -1,0 +1,206 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarr
+  namespace: arrsuite
+  labels: &sonarrLabels
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/part-of: arrsuite
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: *sonarrLabels}
+  template:
+    metadata: {labels: *sonarrLabels}
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp-1
+      automountServiceAccountToken: false
+      tolerations:
+        - {key: node-role.kubernetes.io/control-plane, operator: Exists, effect: NoSchedule}
+        - {key: node-role.kubernetes.io/master, operator: Exists, effect: NoSchedule}
+      securityContext: {runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      initContainers:
+        - name: bootstrap
+          image: busybox:1.36
+          command: [sh, -c]
+          args:
+            - >-
+              if [ ! -f /config/config.xml ]; then
+              printf '%s' "<Config><LogLevel>info</LogLevel><Branch>main</Branch><BindAddress>*</BindAddress><Port>8989</Port><UrlBase></UrlBase><EnableSsl>False</EnableSsl><ApiKey>$SONARR_API_KEY</ApiKey><AuthenticationMethod>External</AuthenticationMethod><AuthenticationRequired>Enabled</AuthenticationRequired><InstanceName>Sonarr</InstanceName></Config>" > /config/config.xml; fi
+          env:
+            - name: SONARR_API_KEY
+              valueFrom: {secretKeyRef: {name: arrsuite-master, key: sonarr-api-key}}
+          volumeMounts: [{name: appdata, mountPath: /config, subPath: sonarr}]
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+      containers:
+        - name: sonarr
+          image: lscr.io/linuxserver/sonarr@sha256:0deb8db6c839ac475e9cd86277712772c40ba7f929a003d7e1de36c4b666bc13
+          imagePullPolicy: IfNotPresent
+          env: [{name: PUID, value: "1000"}, {name: PGID, value: "1000"}, {name: TZ, value: Europe/Amsterdam}]
+          ports: [{name: http, containerPort: 8989}]
+          volumeMounts:
+            - {name: appdata, mountPath: /config, subPath: sonarr}
+            - {name: media, mountPath: /tv, subPath: shows}
+            - {name: media, mountPath: /downloads, subPath: downloads/complete}
+          readinessProbe: {tcpSocket: {port: http}, initialDelaySeconds: 20, periodSeconds: 10}
+          livenessProbe: {tcpSocket: {port: http}, initialDelaySeconds: 60, periodSeconds: 20}
+          securityContext: {runAsUser: 0, runAsGroup: 0, runAsNonRoot: false, allowPrivilegeEscalation: false, capabilities: {drop: [ALL], add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]}}
+      volumes:
+        - {name: appdata, persistentVolumeClaim: {claimName: arrsuite-state}}
+        - {name: media, persistentVolumeClaim: {claimName: media}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  namespace: arrsuite
+  labels: &radarrLabels
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: arrsuite
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: *radarrLabels}
+  template:
+    metadata: {labels: *radarrLabels}
+    spec:
+      hostAliases:
+        - ip: 104.21.43.147
+          hostnames: [api.radarr.video]
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp-1
+      automountServiceAccountToken: false
+      tolerations:
+        - {key: node-role.kubernetes.io/control-plane, operator: Exists, effect: NoSchedule}
+        - {key: node-role.kubernetes.io/master, operator: Exists, effect: NoSchedule}
+      securityContext: {runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      initContainers:
+        - name: bootstrap
+          image: busybox:1.36
+          command: [sh, -c]
+          args: ['if [ ! -f /config/config.xml ]; then printf "%s" "<Config><LogLevel>info</LogLevel><Branch>master</Branch><BindAddress>*</BindAddress><Port>7878</Port><UrlBase></UrlBase><EnableSsl>False</EnableSsl><ApiKey>$RADARR_API_KEY</ApiKey><AuthenticationMethod>External</AuthenticationMethod><AuthenticationRequired>Enabled</AuthenticationRequired><InstanceName>Radarr</InstanceName></Config>" > /config/config.xml; fi']
+          env: [{name: RADARR_API_KEY, valueFrom: {secretKeyRef: {name: arrsuite-master, key: radarr-api-key}}}]
+          volumeMounts: [{name: appdata, mountPath: /config, subPath: radarr}]
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+      containers:
+        - name: radarr
+          image: lscr.io/linuxserver/radarr@sha256:cfbc4fa09dc9d78f7cedc898f4ec48c6277cacedc523c4e159db6ff1c741959c
+          imagePullPolicy: IfNotPresent
+          env: [{name: PUID, value: "1000"}, {name: PGID, value: "1000"}, {name: TZ, value: Europe/Amsterdam}]
+          ports: [{name: http, containerPort: 7878}]
+          volumeMounts:
+            - {name: appdata, mountPath: /config, subPath: radarr}
+            - {name: media, mountPath: /movies, subPath: movies}
+            - {name: media, mountPath: /downloads, subPath: downloads/complete}
+          readinessProbe: {tcpSocket: {port: http}, initialDelaySeconds: 20, periodSeconds: 10}
+          livenessProbe: {tcpSocket: {port: http}, initialDelaySeconds: 60, periodSeconds: 20}
+          securityContext: {runAsUser: 0, runAsGroup: 0, runAsNonRoot: false, allowPrivilegeEscalation: false, capabilities: {drop: [ALL], add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]}}
+      volumes:
+        - {name: appdata, persistentVolumeClaim: {claimName: arrsuite-state}}
+        - {name: media, persistentVolumeClaim: {claimName: media}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowlarr
+  namespace: arrsuite
+  labels: {app.kubernetes.io/name: prowlarr, app.kubernetes.io/part-of: arrsuite}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app.kubernetes.io/name: prowlarr}}
+  template:
+    metadata: {labels: {app.kubernetes.io/name: prowlarr, app.kubernetes.io/part-of: arrsuite}}
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp-1
+      automountServiceAccountToken: false
+      tolerations:
+        - {key: node-role.kubernetes.io/control-plane, operator: Exists, effect: NoSchedule}
+        - {key: node-role.kubernetes.io/master, operator: Exists, effect: NoSchedule}
+      securityContext: {runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: prowlarr
+          image: lscr.io/linuxserver/prowlarr@sha256:f9151e5bc1025c6d0a630d503210cdcb6bb55a7cc098562609d96a408d838902
+          imagePullPolicy: IfNotPresent
+          env: [{name: PUID, value: "1000"}, {name: PGID, value: "1000"}, {name: TZ, value: Europe/Amsterdam}]
+          ports: [{name: http, containerPort: 9696}]
+          volumeMounts: [{name: appdata, mountPath: /config, subPath: prowlarr}]
+          readinessProbe: {tcpSocket: {port: http}, initialDelaySeconds: 20, periodSeconds: 10}
+          livenessProbe: {tcpSocket: {port: http}, initialDelaySeconds: 60, periodSeconds: 20}
+          securityContext: {runAsUser: 0, runAsGroup: 0, runAsNonRoot: false, allowPrivilegeEscalation: false, capabilities: {drop: [ALL], add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]}}
+      volumes: [{name: appdata, persistentVolumeClaim: {claimName: arrsuite-state}}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: arrsuite
+  labels: {app.kubernetes.io/name: qbittorrent, app.kubernetes.io/part-of: arrsuite}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app.kubernetes.io/name: qbittorrent}}
+  template:
+    metadata: {labels: {app.kubernetes.io/name: qbittorrent, app.kubernetes.io/part-of: arrsuite}}
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp-1
+      automountServiceAccountToken: false
+      tolerations:
+        - {key: node-role.kubernetes.io/control-plane, operator: Exists, effect: NoSchedule}
+        - {key: node-role.kubernetes.io/master, operator: Exists, effect: NoSchedule}
+      securityContext: {runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: qbittorrent
+          image: lscr.io/linuxserver/qbittorrent@sha256:97333cc1ccf903e0bbcd8eb67e3332e4970e9c1ecabe145e499e9c0847ebcaed
+          imagePullPolicy: IfNotPresent
+          env: [{name: PUID, value: "1000"}, {name: PGID, value: "1000"}, {name: TZ, value: Europe/Amsterdam}, {name: WEBUI_PORT, value: "8080"}, {name: TORRENTING_PORT, value: "6881"}]
+          ports: [{name: http, containerPort: 8080}, {name: torrent-tcp, containerPort: 6881}, {name: torrent-udp, containerPort: 6881, protocol: UDP}]
+          volumeMounts:
+            - {name: appdata, mountPath: /config, subPath: qbittorrent}
+            - {name: media, mountPath: /media}
+          readinessProbe: {tcpSocket: {port: http}, initialDelaySeconds: 20, periodSeconds: 10}
+          livenessProbe: {tcpSocket: {port: http}, initialDelaySeconds: 60, periodSeconds: 20}
+          securityContext: {runAsUser: 0, runAsGroup: 0, runAsNonRoot: false, allowPrivilegeEscalation: false, capabilities: {drop: [ALL], add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]}}
+      volumes:
+        - {name: appdata, persistentVolumeClaim: {claimName: arrsuite-state}}
+        - {name: media, persistentVolumeClaim: {claimName: media}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bazarr
+  namespace: arrsuite
+  labels: {app.kubernetes.io/name: bazarr, app.kubernetes.io/part-of: arrsuite}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app.kubernetes.io/name: bazarr}}
+  template:
+    metadata: {labels: {app.kubernetes.io/name: bazarr, app.kubernetes.io/part-of: arrsuite}}
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp-1
+      automountServiceAccountToken: false
+      tolerations:
+        - {key: node-role.kubernetes.io/control-plane, operator: Exists, effect: NoSchedule}
+        - {key: node-role.kubernetes.io/master, operator: Exists, effect: NoSchedule}
+      securityContext: {runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: bazarr
+          image: lscr.io/linuxserver/bazarr@sha256:c1673816321156b904af9b7e6415ea547ae9622e4acc375358f1e1eb9ed1e904
+          imagePullPolicy: IfNotPresent
+          env: [{name: PUID, value: "1000"}, {name: PGID, value: "1000"}, {name: TZ, value: Europe/Amsterdam}]
+          ports: [{name: http, containerPort: 6767}]
+          volumeMounts:
+            - {name: appdata, mountPath: /config, subPath: bazarr}
+            - {name: media, mountPath: /movies, subPath: movies}
+            - {name: media, mountPath: /tv, subPath: shows}
+          readinessProbe: {tcpSocket: {port: http}, initialDelaySeconds: 20, periodSeconds: 10}
+          livenessProbe: {tcpSocket: {port: http}, initialDelaySeconds: 60, periodSeconds: 20}
+          securityContext: {runAsUser: 0, runAsGroup: 0, runAsNonRoot: false, allowPrivilegeEscalation: false, capabilities: {drop: [ALL], add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]}}
+      volumes:
+        - {name: appdata, persistentVolumeClaim: {claimName: arrsuite-state}}
+        - {name: media, persistentVolumeClaim: {claimName: media}}

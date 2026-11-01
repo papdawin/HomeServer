@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: arrsuite-appdata
+  labels:
+    app.kubernetes.io/part-of: arrsuite
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: arrsuite-nfs
+  mountOptions: [vers=4.1, hard, noatime]
+  nfs:
+    server: 192.168.68.6
+    path: /application-state
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: appdata
+  namespace: arrsuite
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: arrsuite-nfs
+  volumeName: arrsuite-appdata
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: arrsuite-media
+  labels:
+    app.kubernetes.io/part-of: arrsuite
+spec:
+  capacity:
+    storage: 10Ti
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: arrsuite-media-nfs
+  mountOptions: [vers=4.1, hard, noatime]
+  nfs:
+    server: 192.168.68.6
+    path: /media
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media
+  namespace: arrsuite
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: arrsuite-media-nfs
+  volumeName: arrsuite-media
+  resources:
+    requests:
+      storage: 10Ti

@@ -1,0 +1,241 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - hermes-tls.yaml
+  - hermes-provider-config.yaml
+  - storage.yaml
+  - serviceaccounts.yaml
+  - networkpolicy.yaml
+  - ingress.yaml
+  - agent-config.yaml
+  - paperclip-deployment.yaml
+  - paperclip-hermes-gateway-skill-inventory.yaml
+  - hermes-deployments.yaml
+  - hermes-specialists.yaml
+patches:
+  - target:
+      kind: Deployment
+      labelSelector: app.kubernetes.io/part-of=hermes-agent
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/-
+        value:
+          name: hermes-tls
+          image: nginx:1.27-alpine@sha256:62223d644fa234c3a1cc785ee14242ec47a77364226f1c811d2f669f96dc2ac8
+          imagePullPolicy: IfNotPresent
+          command: [nginx]
+          args: [-g, daemon off;, -c, /etc/nginx/nginx.conf]
+          ports:
+            - name: https
+              containerPort: 8643
+          readinessProbe:
+            tcpSocket:
+              port: https
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: hermes-tls
+              mountPath: /etc/hermes-tls
+              readOnly: true
+            - name: hermes-tls-proxy
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+      - op: add
+        path: /spec/template/spec/volumes/-
+        value:
+          name: hermes-tls
+          secret:
+            secretName: paperclip-hermes-gateways-tls
+      - op: add
+        path: /spec/template/spec/volumes/-
+        value:
+          name: hermes-tls-proxy
+          configMap:
+            name: hermes-tls-proxy
+      - op: add
+        path: /spec/template/spec/volumes/-
+        value:
+          name: hermes-skill-compat
+          configMap:
+            name: paperclip-hermes-gateway-skill-inventory
+  - target:
+      kind: Deployment
+      labelSelector: app.kubernetes.io/part-of=hermes-agent
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/volumeMounts/-
+        value:
+          name: hermes-skill-compat
+          mountPath: /opt/hermes/tools/skills_tool.py
+          subPath: skills_tool.py
+          readOnly: true
+  - target:
+      kind: Service
+      labelSelector: app.kubernetes.io/part-of=hermes-agent
+    patch: |-
+      - op: add
+        path: /spec/ports/-
+        value:
+          name: https
+          port: 8643
+          targetPort: https
+  - target:
+      kind: Deployment
+      labelSelector: app.kubernetes.io/part-of=hermes-agent
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/3/value
+        value: /opt/data/hermes-home
+      - op: add
+        path: /spec/template/spec/containers/0/command
+        value: ["/bin/sh", "-c"]
+      - op: add
+        path: /spec/template/spec/containers/0/args
+        value:
+          - >-
+            mkdir -p "$HERMES_HOME";
+            export HOME=/opt/data;
+            ln -sfn "$HERMES_HOME" "$HOME/.hermes";
+            if [ ! -f "$HERMES_HOME/auth.json" ]; then
+              cp /run/hermes-provider/auth.json "$HERMES_HOME/auth.json";
+            fi;
+            if [ ! -f "$HERMES_HOME/config.yaml" ]; then
+              cp /run/hermes-provider/config.yaml "$HERMES_HOME/config.yaml";
+            fi;
+            exec hermes gateway run
+      - op: add
+        path: /spec/template/spec/containers/0/volumeMounts/-
+        value:
+          name: hermes-provider
+          mountPath: /run/hermes-provider
+          readOnly: true
+      - op: add
+        path: /spec/template/spec/volumes/-
+        value:
+          name: hermes-provider
+          projected:
+            sources:
+              - secret:
+                  name: paperclip-hermes-openai-codex
+                  items:
+                    - key: auth.json
+                      path: auth.json
+              - configMap:
+                  name: hermes-provider-config
+                  items:
+                    - key: config.yaml
+                      path: config.yaml
+  - target:
+      kind: Deployment
+      labelSelector: paperclip.homeserver/agent=gavin-orsay
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: PAPERCLIP_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: paperclip-agent-keys
+              key: gavin-orsay
+  - target:
+      kind: Deployment
+      labelSelector: paperclip.homeserver/agent=frank-underwoord
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: PAPERCLIP_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: paperclip-agent-keys
+              key: frank-underwoord
+  - target:
+      kind: Deployment
+      labelSelector: paperclip.homeserver/agent=claire-underwood
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: PAPERCLIP_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: paperclip-agent-keys
+              key: claire-underwood
+  - target:
+      kind: Deployment
+      labelSelector: paperclip.homeserver/agent=doug-stamper
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: PAPERCLIP_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: paperclip-agent-keys
+              key: doug-stamper
+  - target:
+      kind: Deployment
+      labelSelector: paperclip.homeserver/agent=tom-hammerschmidt
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: PAPERCLIP_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: paperclip-agent-keys
+              key: tom-hammerschmidt
+  - target:
+      kind: Deployment
+      labelSelector: paperclip.homeserver/agent=zoe-barnes
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: PAPERCLIP_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: paperclip-agent-keys
+              key: zoe-barnes
+  - target:
+      kind: Deployment
+      labelSelector: paperclip.homeserver/agent=raymond-tusk
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: PAPERCLIP_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: paperclip-agent-keys
+              key: raymond-tusk
+  - target:
+      kind: Deployment
+      labelSelector: paperclip.homeserver/agent=remy-danton
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: PAPERCLIP_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: paperclip-agent-keys
+              key: remy-danton

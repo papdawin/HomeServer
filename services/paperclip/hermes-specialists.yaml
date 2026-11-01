@@ -1,0 +1,840 @@
+# Generated from the explicit role roster; each agent remains a separately managed Deployment and Service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-gavin-orsay
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-gavin-orsay
+    app.kubernetes.io/part-of: hermes-agent
+    paperclip.homeserver/agent: gavin-orsay
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-gavin-orsay
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes-gavin-orsay
+        app.kubernetes.io/part-of: hermes-agent
+        paperclip.homeserver/agent: gavin-orsay
+    spec:
+      serviceAccountName: gavin-orsay
+      automountServiceAccountToken: true
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp-1
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: hermes
+          image: nousresearch/hermes-agent@sha256:9c5561579f3ffdf333401797094ac3a743738d6c25d40f4331c7bf77b694238d
+          imagePullPolicy: IfNotPresent
+          command: [hermes, gateway, run]
+          ports:
+            - name: api
+              containerPort: 8642
+          env:
+            - name: API_SERVER_ENABLED
+              value: "true"
+            - name: API_SERVER_HOST
+              value: 0.0.0.0
+            - name: API_SERVER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-gateway-keys
+                  key: gavin-orsay
+            - name: HERMES_HOME
+              value: /opt/data
+            - name: PAPERCLIP_API_URL
+              value: http://paperclip.paperclip.svc.cluster.local
+            - name: AGENT_ROLE
+              value: gavin-orsay
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 150m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: state
+              mountPath: /opt/data
+              subPath: agents/gavin-orsay
+            - name: role
+              mountPath: /etc/hermes/role.md
+              subPath: gavin-orsay.md
+              readOnly: true
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: paperclip-state
+        - name: role
+          configMap:
+            name: agent-roles
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-gavin-orsay
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-gavin-orsay
+    app.kubernetes.io/part-of: hermes-agent
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: hermes-gavin-orsay
+  ports:
+    - name: api
+      port: 8642
+      targetPort: api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-claire-underwood
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-claire-underwood
+    app.kubernetes.io/part-of: hermes-agent
+    paperclip.homeserver/agent: claire-underwood
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-claire-underwood
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes-claire-underwood
+        app.kubernetes.io/part-of: hermes-agent
+        paperclip.homeserver/agent: claire-underwood
+    spec:
+      serviceAccountName: paperclip
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp-1
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: hermes
+          image: nousresearch/hermes-agent@sha256:9c5561579f3ffdf333401797094ac3a743738d6c25d40f4331c7bf77b694238d
+          imagePullPolicy: IfNotPresent
+          command: [hermes, gateway, run]
+          ports:
+            - name: api
+              containerPort: 8642
+          env:
+            - name: API_SERVER_ENABLED
+              value: "true"
+            - name: API_SERVER_HOST
+              value: 0.0.0.0
+            - name: API_SERVER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-gateway-keys
+                  key: claire-underwood
+            - name: HERMES_HOME
+              value: /opt/data
+            - name: PAPERCLIP_API_URL
+              value: http://paperclip.paperclip.svc.cluster.local
+            - name: AGENT_ROLE
+              value: claire-underwood
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 150m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: state
+              mountPath: /opt/data
+              subPath: agents/claire-underwood
+            - name: role
+              mountPath: /etc/hermes/role.md
+              subPath: claire-underwood.md
+              readOnly: true
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: paperclip-state
+        - name: role
+          configMap:
+            name: agent-roles
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-claire-underwood
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-claire-underwood
+    app.kubernetes.io/part-of: hermes-agent
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: hermes-claire-underwood
+  ports:
+    - name: api
+      port: 8642
+      targetPort: api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-doug-stamper
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-doug-stamper
+    app.kubernetes.io/part-of: hermes-agent
+    paperclip.homeserver/agent: doug-stamper
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-doug-stamper
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes-doug-stamper
+        app.kubernetes.io/part-of: hermes-agent
+        paperclip.homeserver/agent: doug-stamper
+    spec:
+      serviceAccountName: paperclip
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp-1
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: hermes
+          image: nousresearch/hermes-agent@sha256:9c5561579f3ffdf333401797094ac3a743738d6c25d40f4331c7bf77b694238d
+          imagePullPolicy: IfNotPresent
+          command: [hermes, gateway, run]
+          ports:
+            - name: api
+              containerPort: 8642
+          env:
+            - name: API_SERVER_ENABLED
+              value: "true"
+            - name: API_SERVER_HOST
+              value: 0.0.0.0
+            - name: API_SERVER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-gateway-keys
+                  key: doug-stamper
+            - name: HERMES_HOME
+              value: /opt/data
+            - name: PAPERCLIP_API_URL
+              value: http://paperclip.paperclip.svc.cluster.local
+            - name: AGENT_ROLE
+              value: doug-stamper
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 150m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: state
+              mountPath: /opt/data
+              subPath: agents/doug-stamper
+            - name: role
+              mountPath: /etc/hermes/role.md
+              subPath: doug-stamper.md
+              readOnly: true
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: paperclip-state
+        - name: role
+          configMap:
+            name: agent-roles
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-doug-stamper
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-doug-stamper
+    app.kubernetes.io/part-of: hermes-agent
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: hermes-doug-stamper
+  ports:
+    - name: api
+      port: 8642
+      targetPort: api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-tom-hammerschmidt
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-tom-hammerschmidt
+    app.kubernetes.io/part-of: hermes-agent
+    paperclip.homeserver/agent: tom-hammerschmidt
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-tom-hammerschmidt
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes-tom-hammerschmidt
+        app.kubernetes.io/part-of: hermes-agent
+        paperclip.homeserver/agent: tom-hammerschmidt
+    spec:
+      serviceAccountName: paperclip
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp-1
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: hermes
+          image: nousresearch/hermes-agent@sha256:9c5561579f3ffdf333401797094ac3a743738d6c25d40f4331c7bf77b694238d
+          imagePullPolicy: IfNotPresent
+          command: [hermes, gateway, run]
+          ports:
+            - name: api
+              containerPort: 8642
+          env:
+            - name: API_SERVER_ENABLED
+              value: "true"
+            - name: API_SERVER_HOST
+              value: 0.0.0.0
+            - name: API_SERVER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-gateway-keys
+                  key: tom-hammerschmidt
+            - name: HERMES_HOME
+              value: /opt/data
+            - name: PAPERCLIP_API_URL
+              value: http://paperclip.paperclip.svc.cluster.local
+            - name: AGENT_ROLE
+              value: tom-hammerschmidt
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 150m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: state
+              mountPath: /opt/data
+              subPath: agents/tom-hammerschmidt
+            - name: role
+              mountPath: /etc/hermes/role.md
+              subPath: tom-hammerschmidt.md
+              readOnly: true
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: paperclip-state
+        - name: role
+          configMap:
+            name: agent-roles
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-tom-hammerschmidt
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-tom-hammerschmidt
+    app.kubernetes.io/part-of: hermes-agent
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: hermes-tom-hammerschmidt
+  ports:
+    - name: api
+      port: 8642
+      targetPort: api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-zoe-barnes
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-zoe-barnes
+    app.kubernetes.io/part-of: hermes-agent
+    paperclip.homeserver/agent: zoe-barnes
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-zoe-barnes
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes-zoe-barnes
+        app.kubernetes.io/part-of: hermes-agent
+        paperclip.homeserver/agent: zoe-barnes
+    spec:
+      serviceAccountName: paperclip
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp-1
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: hermes
+          image: nousresearch/hermes-agent@sha256:9c5561579f3ffdf333401797094ac3a743738d6c25d40f4331c7bf77b694238d
+          imagePullPolicy: IfNotPresent
+          command: [hermes, gateway, run]
+          ports:
+            - name: api
+              containerPort: 8642
+          env:
+            - name: API_SERVER_ENABLED
+              value: "true"
+            - name: API_SERVER_HOST
+              value: 0.0.0.0
+            - name: API_SERVER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-gateway-keys
+                  key: zoe-barnes
+            - name: HERMES_HOME
+              value: /opt/data
+            - name: PAPERCLIP_API_URL
+              value: http://paperclip.paperclip.svc.cluster.local
+            - name: AGENT_ROLE
+              value: zoe-barnes
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 150m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: state
+              mountPath: /opt/data
+              subPath: agents/zoe-barnes
+            - name: role
+              mountPath: /etc/hermes/role.md
+              subPath: zoe-barnes.md
+              readOnly: true
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: paperclip-state
+        - name: role
+          configMap:
+            name: agent-roles
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-zoe-barnes
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-zoe-barnes
+    app.kubernetes.io/part-of: hermes-agent
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: hermes-zoe-barnes
+  ports:
+    - name: api
+      port: 8642
+      targetPort: api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-raymond-tusk
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-raymond-tusk
+    app.kubernetes.io/part-of: hermes-agent
+    paperclip.homeserver/agent: raymond-tusk
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-raymond-tusk
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes-raymond-tusk
+        app.kubernetes.io/part-of: hermes-agent
+        paperclip.homeserver/agent: raymond-tusk
+    spec:
+      serviceAccountName: paperclip
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp-1
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: hermes
+          image: nousresearch/hermes-agent@sha256:9c5561579f3ffdf333401797094ac3a743738d6c25d40f4331c7bf77b694238d
+          imagePullPolicy: IfNotPresent
+          command: [hermes, gateway, run]
+          ports:
+            - name: api
+              containerPort: 8642
+          env:
+            - name: API_SERVER_ENABLED
+              value: "true"
+            - name: API_SERVER_HOST
+              value: 0.0.0.0
+            - name: API_SERVER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-gateway-keys
+                  key: raymond-tusk
+            - name: HERMES_HOME
+              value: /opt/data
+            - name: PAPERCLIP_API_URL
+              value: http://paperclip.paperclip.svc.cluster.local
+            - name: AGENT_ROLE
+              value: raymond-tusk
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 150m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: state
+              mountPath: /opt/data
+              subPath: agents/raymond-tusk
+            - name: role
+              mountPath: /etc/hermes/role.md
+              subPath: raymond-tusk.md
+              readOnly: true
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: paperclip-state
+        - name: role
+          configMap:
+            name: agent-roles
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-raymond-tusk
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-raymond-tusk
+    app.kubernetes.io/part-of: hermes-agent
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: hermes-raymond-tusk
+  ports:
+    - name: api
+      port: 8642
+      targetPort: api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-remy-danton
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-remy-danton
+    app.kubernetes.io/part-of: hermes-agent
+    paperclip.homeserver/agent: remy-danton
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-remy-danton
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes-remy-danton
+        app.kubernetes.io/part-of: hermes-agent
+        paperclip.homeserver/agent: remy-danton
+    spec:
+      serviceAccountName: paperclip
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp-1
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: hermes
+          image: nousresearch/hermes-agent@sha256:9c5561579f3ffdf333401797094ac3a743738d6c25d40f4331c7bf77b694238d
+          imagePullPolicy: IfNotPresent
+          command: [hermes, gateway, run]
+          ports:
+            - name: api
+              containerPort: 8642
+          env:
+            - name: API_SERVER_ENABLED
+              value: "true"
+            - name: API_SERVER_HOST
+              value: 0.0.0.0
+            - name: API_SERVER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-gateway-keys
+                  key: remy-danton
+            - name: HERMES_HOME
+              value: /opt/data
+            - name: PAPERCLIP_API_URL
+              value: http://paperclip.paperclip.svc.cluster.local
+            - name: AGENT_ROLE
+              value: remy-danton
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 150m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: state
+              mountPath: /opt/data
+              subPath: agents/remy-danton
+            - name: role
+              mountPath: /etc/hermes/role.md
+              subPath: remy-danton.md
+              readOnly: true
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: paperclip-state
+        - name: role
+          configMap:
+            name: agent-roles
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-remy-danton
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: hermes-remy-danton
+    app.kubernetes.io/part-of: hermes-agent
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: hermes-remy-danton
+  ports:
+    - name: api
+      port: 8642
+      targetPort: api

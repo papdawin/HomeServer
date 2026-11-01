@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: arrsuite
+  namespace: arrsuite
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-redirect-to-https@kubernetescrd,traefik-security-headers@kubernetescrd,arrsuite-authentik-forward-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - secretName: home-papdavid-eu-wildcard-tls
+      hosts:
+        - sonarr.home.papdavid.eu
+        - radarr.home.papdavid.eu
+        - prowlarr.home.papdavid.eu
+        - qbittorrent.home.papdavid.eu
+        - bazarr.home.papdavid.eu
+        - seerr.home.papdavid.eu
+  rules:
+    - host: sonarr.home.papdavid.eu
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: sonarr, port: {name: http}}}}]}
+    - host: radarr.home.papdavid.eu
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: radarr, port: {name: http}}}}]}
+    - host: prowlarr.home.papdavid.eu
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: prowlarr, port: {name: http}}}}]}
+    - host: qbittorrent.home.papdavid.eu
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: qbittorrent, port: {name: http}}}}]}
+    - host: bazarr.home.papdavid.eu
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: bazarr, port: {name: http}}}}]}
+    - host: seerr.home.papdavid.eu
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: seerr, port: {name: http}}}}]}

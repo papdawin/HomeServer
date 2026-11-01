@@ -1,0 +1,61 @@
+- Photos:
+    - Immich:
+        icon: immich.png
+        href: https://immich.home.papdavid.eu
+        description: Photos and videos
+        siteMonitor: http://immich-server.immich.svc.cluster.local:2283/api/server/ping
+
+- Cinema:
+    - Jellyfin:
+        icon: jellyfin.png
+        href: https://jellyfin.home.papdavid.eu
+        description: Movies and TV
+        siteMonitor: http://jellyfin.arrsuite.svc.cluster.local:8096
+    - Seerr:
+        icon: seerr.png
+        href: https://seerr.home.papdavid.eu
+        description: Media requests
+        siteMonitor: http://seerr.arrsuite.svc.cluster.local:5055/api/v1/settings/public
+
+    - Sonarr:
+        icon: sonarr.png
+        href: https://sonarr.home.papdavid.eu
+        description: TV automation
+        siteMonitor: http://sonarr.arrsuite.svc.cluster.local:8989
+    - Radarr:
+        icon: radarr.png
+        href: https://radarr.home.papdavid.eu
+        description: Movie automation
+        siteMonitor: http://radarr.arrsuite.svc.cluster.local:7878
+    - Prowlarr:
+        icon: prowlarr.png
+        href: https://prowlarr.home.papdavid.eu
+        description: Indexer management
+        siteMonitor: http://prowlarr.arrsuite.svc.cluster.local:9696
+    - Bazarr:
+        icon: bazarr.png
+        href: https://bazarr.home.papdavid.eu
+        description: Subtitle automation
+        siteMonitor: http://bazarr.arrsuite.svc.cluster.local:6767
+    - qBittorrent:
+        icon: qbittorrent.png
+        href: https://qbittorrent.home.papdavid.eu
+        description: Download client
+        siteMonitor: http://qbittorrent.arrsuite.svc.cluster.local:8080
+
+- Infrastructure:
+    - Authentik:
+        icon: authentik.png
+        href: https://auth.home.papdavid.eu
+        description: Identity provider
+        siteMonitor: http://authentik-server.authentik.svc.cluster.local:80/-/health/live/
+    - Home Assistant:
+        icon: home-assistant.png
+        href: https://homeassistant.home.papdavid.eu
+        description: Home automation
+        siteMonitor: http://homeassistant.homeassistant.svc.cluster.local:8123
+    - PowerDNS Admin:
+        icon: si-powerdns.png
+        href: https://dnsadmin.home.papdavid.eu
+        description: DNS administration
+        siteMonitor: http://powerdns-admin.powerdns.svc.cluster.local:80/login
