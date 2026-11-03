@@ -4,7 +4,9 @@ resources:
   - namespace.yaml
   - hermes-tls.yaml
   - hermes-provider-config.yaml
+  - codex-broker.yaml
   - storage.yaml
+  - iscsi-state.yaml
   - serviceaccounts.yaml
   - networkpolicy.yaml
   - ingress.yaml
@@ -13,6 +15,12 @@ resources:
   - paperclip-hermes-gateway-skill-inventory.yaml
   - hermes-deployments.yaml
   - hermes-specialists.yaml
+configMapGenerator:
+  - name: paperclip-codex-broker
+    files:
+      - codex-broker.py
+    options:
+      disableNameSuffixHash: true
 patches:
   - target:
       kind: Deployment
@@ -114,12 +122,7 @@ patches:
             mkdir -p "$HERMES_HOME";
             export HOME=/opt/data;
             ln -sfn "$HERMES_HOME" "$HOME/.hermes";
-            if [ ! -f "$HERMES_HOME/auth.json" ]; then
-              cp /run/hermes-provider/auth.json "$HERMES_HOME/auth.json";
-            fi;
-            if [ ! -f "$HERMES_HOME/config.yaml" ]; then
-              cp /run/hermes-provider/config.yaml "$HERMES_HOME/config.yaml";
-            fi;
+            cp /run/hermes-provider/config.yaml "$HERMES_HOME/config.yaml";
             exec hermes gateway run
       - op: add
         path: /spec/template/spec/containers/0/volumeMounts/-
@@ -133,16 +136,23 @@ patches:
           name: hermes-provider
           projected:
             sources:
-              - secret:
-                  name: paperclip-hermes-openai-codex
-                  items:
-                    - key: auth.json
-                      path: auth.json
               - configMap:
                   name: hermes-provider-config
                   items:
                     - key: config.yaml
                       path: config.yaml
+  - target:
+      kind: Deployment
+      labelSelector: app.kubernetes.io/part-of=hermes-agent
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: paperclip-codex-broker
+              key: api-key
   - target:
       kind: Deployment
       labelSelector: paperclip.homeserver/agent=gavin-orsay

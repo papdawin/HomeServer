@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperclip-codex-broker
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: paperclip-codex-broker
+    app.kubernetes.io/part-of: paperclip-model-broker
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: paperclip-codex-broker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: paperclip-codex-broker
+        app.kubernetes.io/part-of: paperclip-model-broker
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: talos-cp-1
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: broker
+          image: nousresearch/hermes-agent@sha256:9c5561579f3ffdf333401797094ac3a743738d6c25d40f4331c7bf77b694238d
+          imagePullPolicy: IfNotPresent
+          command: [/bin/sh, -c]
+          args:
+            - >-
+              mkdir -p /opt/data/broker-home;
+              export HOME=/opt/data;
+              ln -sfn /opt/data/broker-home /opt/data/.hermes;
+              if [ ! -f /opt/data/broker-home/auth.json ]; then
+                cp /run/hermes-provider/auth.json /opt/data/broker-home/auth.json;
+              fi;
+              exec python3 /app/codex-broker.py
+          ports:
+            - name: http
+              containerPort: 8645
+          env:
+            - name: HERMES_HOME
+              value: /opt/data/broker-home
+            - name: BROKER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: paperclip-codex-broker
+                  key: api-key
+            - name: UPSTREAM_TIMEOUT_SECONDS
+              value: "300"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          volumeMounts:
+            - name: state
+              mountPath: /opt/data
+            - name: broker-code
+              mountPath: /app/codex-broker.py
+              subPath: codex-broker.py
+              readOnly: true
+            - name: hermes-provider
+              mountPath: /run/hermes-provider
+              readOnly: true
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: paperclip-state-iscsi
+        - name: broker-code
+          configMap:
+            name: paperclip-codex-broker
+            defaultMode: 0555
+        - name: hermes-provider
+          secret:
+            secretName: paperclip-hermes-openai-codex
+            items:
+              - key: auth.json
+                path: auth.json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperclip-codex-broker
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/name: paperclip-codex-broker
+    app.kubernetes.io/part-of: paperclip-model-broker
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: paperclip-codex-broker
+  ports:
+    - name: http
+      port: 8645
+      targetPort: http

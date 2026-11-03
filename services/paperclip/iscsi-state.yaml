@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qnap-iscsi-paperclip-hermes
+  labels:
+    app.kubernetes.io/part-of: storage
+    storage.homeserver/role: paperclip-hermes
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: qnap-iscsi-static
+  volumeMode: Filesystem
+  csi:
+    driver: iscsi.csi.k8s.io
+    fsType: ext4
+    volumeHandle: qnap-iscsi-paperclip-hermes
+    volumeAttributes:
+      targetPortal: 192.168.68.6:3260
+      portals: '["192.168.68.6:3260"]'
+      iqn: iqn.2004-04.com.qnap:ts-451plus:iscsi.jellyfin-config.f840af
+      lun: "4"
+      discovery: "true"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperclip-state-iscsi
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/part-of: paperclip
+    storage.homeserver/role: paperclip-hermes
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: qnap-iscsi-static
+  volumeName: qnap-iscsi-paperclip-hermes
+  resources:
+    requests:
+      storage: 50Gi

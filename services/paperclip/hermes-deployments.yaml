@@ -33,6 +33,7 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -95,7 +96,7 @@ spec:
       volumes:
         - name: state
           persistentVolumeClaim:
-            claimName: paperclip-state
+            claimName: paperclip-state-iscsi
         - name: role
           configMap:
             name: agent-roles

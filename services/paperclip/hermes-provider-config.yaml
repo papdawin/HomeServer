@@ -6,6 +6,10 @@ metadata:
 data:
   config.yaml: |
     model:
-      provider: openai-codex
+      provider: paperclip-codex-broker
       default: gpt-5.6-luna
-      base_url: https://chatgpt.com/backend-api/codex
+    custom_providers:
+      - name: paperclip-codex-broker
+        base_url: http://paperclip-codex-broker.paperclip.svc.cluster.local:8645/v1
+        key_env: OPENAI_API_KEY
+        api_mode: codex_responses
